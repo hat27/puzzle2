@@ -270,7 +270,7 @@ def execute_command(app, **kwargs):
     def _get_script(script_):
         if script_ is None:
             script_ = os.path.dirname(__file__)
-            script_ = "{}/PuzzleBoot.py".format(script_.replace("\\", "/"))
+            script_ = "{}/pz_batch.py".format(script_.replace("\\", "/"))
         else:
             script_ = script_.replace("/", "\\")
 
