@@ -1,0 +1,4 @@
+*.pyc
+.idea/
+pipenv/
+src/puzzle.egg-info/
