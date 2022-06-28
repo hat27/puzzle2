@@ -38,7 +38,7 @@ class ChangeFrame(Piece):
 
 
 if __name__ == "__main__":
-    # from config
+    # from config file
     piece = {"a": 2, "paint": {"frame": "@frame"}}
 
     # data
@@ -46,6 +46,8 @@ if __name__ == "__main__":
 
     # from previus job
     pass_data = {"frame": 10}
+
+
     x = ChangeFrame(data=data)
     x.execute()
 

@@ -17,3 +17,7 @@ pip install -e .
 
 4. run test script
 　python tests/win/test_normal_mode.py
+
+5. unit test, check this file
+  python tests/data/pieces/win/change_frame.py
+  
