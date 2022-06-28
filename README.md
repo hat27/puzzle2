@@ -1,15 +1,19 @@
 HOWTO
 
 WARNING: 
-switch to develop branch
+develop branch only
 
-1. vertialenv作成
-2. 環境を変更
-3. パッケージインストール
-　puzzle2のルートディレクトリで
-　pip install -e .
+cd puzzle2 directory
 
-4. テストスクリプト実行 
-　python /puzzle2/tests/win/test_normal_mode.py
+1. vertialenv
+mkdir pipenv
+cd pipenv
+pipenv install --python 3.7
+pipenv shell
 
+3. install package
+cd ../
+pip install -e .
 
+4. run test script
+　python tests/win/test_normal_mode.py
