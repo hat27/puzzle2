@@ -23,15 +23,18 @@ except NameError:
 
 
 class Puzzle(object):
-    def __init__(self, name="puzzle", file_mode=False, **args):
+    def __init__(self, name="puzzle", file_mode=False, **kwargs):
         """
         :type name: unicode
         :type file_mode: bool
 
         :param name: log name
         :param file_mode:  use environ to run
-        :param args[use_default_config]:  use_default_config
-        :param logger:  if logger in args, use it
+        :param kwargs[use_default_config]:  use_default_config
+        :param logger:  if logger in kwargs, use it
+        :param logger_level: default log level
+        :param file_handler_level: override file handler level
+        :param stream_handler_level: override stream handler level
         """
         self.file_mode = file_mode
         self.break_ = False
@@ -40,28 +43,29 @@ class Puzzle(object):
             log_directory = os.environ.get("__PUZZLE_LOGGER_DIRECTORY__", pz_env.get_log_directory())
             self.name = os.environ.get("__PUZZLE_LOGGER_NAME__", name)
         else:
-            log_directory = args.get("log_directory", pz_env.get_log_directory())
+            log_directory = kwargs.get("log_directory", pz_env.get_log_directory())
             self.name = name
 
-        self.order = args.get("order", ["primary", "main", "post"])
+        if "log_directory" in kwargs:
+            del kwargs["log_directory"]
 
-        if not args.get("logger", False):
+        self.order = kwargs.get("order", ["primary", "main", "post"])
+
+        if not kwargs.get("logger", False):
             self.Log = PzLog.PzLog(name=self.name,
-                                   new=args.get("new", False),
                                    log_directory=log_directory,
-                                   use_default_config=args.get("use_default_config", False), 
-                                   logger_level=args.get("logger_level", "debug"))
+                                   **kwargs)
 
             self.logger = self.Log.logger
         else:
-            self.logger = args["logger"]
+            self.logger = kwargs["logger"]
         
         
         for handler in self.logger.handlers[::-1]:
             if hasattr(handler, "baseFilename"):
                 self.logger.debug("baseFilename: {}".format(handler.baseFilename))
 
-        pieces_directory = args.get("pieces_directory", False)
+        pieces_directory = kwargs.get("pieces_directory", False)
         if pieces_directory:
             if pieces_directory not in sys.path:
                 sys.path.append(pieces_directory)
@@ -305,7 +309,7 @@ def execute_command(app, **kwargs):
         cmd = '"{}" -command '.format(app)
         cmd += '"python(\\\"import sys;import os;sys.path.append(\\\\\\"{}\\\\\\");'.format(sys_path)
         cmd += 'from puzzle.Puzzle import Puzzle;x=Puzzle(\\\\\\"{}\\\\\\", '.format(log_name)
-        cmd += 'file_mode=True, update_log_config=True)\\\");"'
+        cmd += 'file_mode=True)\\\");"'
     else:
         print("return: False")
         return False

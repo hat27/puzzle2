@@ -13,7 +13,7 @@ else:
     __STANDALONE__ = False
 
 sys.path.append(os.environ["__PUZZLE_PATH__"])
-from puzzle.Puzzle import Puzzle
+from puzzle2.Puzzle import Puzzle
 
 x = Puzzle(file_mode=True)
 #results = x.play_as_file_mode()

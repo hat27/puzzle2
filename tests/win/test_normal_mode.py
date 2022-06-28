@@ -106,8 +106,14 @@ data = {
 
        }
 
-x = Puzzle("sample", new=True, update_log_config=True)
+from logging import getLogger
+
+log_directory = "{}/log".format(os.path.dirname(__file__))
+if not log_directory:
+  os.makedirs(log_directory)
+
+x = Puzzle("sample", stream_handler_level="info", log_directory=log_directory)
 results = x.play(pieces, data, {})
 
 for result in results:
-  print(result)
+    print(result)
