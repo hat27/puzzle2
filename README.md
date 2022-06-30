@@ -3,6 +3,7 @@ HOWTO
 WARNING: 
 develop branch only
 
+```
 cd puzzle2 directory
 
 1. vertialenv
@@ -20,4 +21,4 @@ pip install -e .
 
 5. unit test, check this file
   python tests/data/pieces/win/change_frame.py
-  
+```  
