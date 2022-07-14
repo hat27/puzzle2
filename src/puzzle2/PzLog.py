@@ -1,7 +1,12 @@
 # -*- coding: utf8 -*-
 
 import os
-import configparser
+import sys
+
+if sys.version.startswith("2"):
+    import ConfigParser
+else:
+    import configparser
 
 import logging.config
 from logging import getLogger, DEBUG, INFO, CRITICAL, ERROR
@@ -108,13 +113,25 @@ class PzLog(object):
                 pass
     
     def update_config_file(self, config_path, update_config):
-        ini = configparser.ConfigParser()
-        ini.read(config_path, "utf-8")
-        for k, v in update_config.items():
-            if k in ini:
-                for k2, v2 in v.items():
-                    if k2 in ini[k]:
-                        ini[k][k2] = v2
+        if sys.version.startswith("2"):
+            ini = ConfigParser.ConfigParser()
+            ini.read(config_path)
+        
+            for k, v in update_config.items():
+                print(k, v)
+                if k in ini.sections():
+                    for k2, v2 in v.items():
+                        if ini.get(k, k2):
+                            ini.set(k, k2, v2)
+        else:
+            ini = configparser.ConfigParser()
+            ini.read(config_path, "utf-8")
+
+            for k, v in update_config.items():
+                if k in ini:
+                    for k2, v2 in v.items():
+                        if k2 in ini[k]:
+                            ini[k][k2] = v2
 
         print(config_path)
         with open(config_path, "w") as f:
