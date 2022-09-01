@@ -37,6 +37,7 @@ class PzLog(object):
 
         if new:
             self.remove_handler()
+            kwargs["use_default_config"] = True
 
         if kwargs.get("clear", False):
             os.remove(self.log_path)

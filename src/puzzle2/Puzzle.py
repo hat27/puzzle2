@@ -164,7 +164,8 @@ class Puzzle(object):
 
                     messages_.extend(message_)
 
-                    if not flg_:
+                    if not flg_ and piece_data_.get("force"):
+
                         self.break_ = True
 
                 return flg_, pass_data_, messages_

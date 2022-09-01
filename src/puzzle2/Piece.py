@@ -9,7 +9,13 @@ class Piece(object):
         self.pass_data = args.get("pass_data", {})
         self.piece_data = args.get("piece_data", {})
         self.logger = args.get("logger", False)
-        self.result_type = "successed" # failed
+        """
+         1: successed
+         0: failed
+        -1: filtered
+
+        """
+        self.result_type = 1
         if not self.logger:
             log = PzLog.PzLog()
             self.logger = log.logger
@@ -27,12 +33,13 @@ class Piece(object):
                     self.data[k] = self.data[v]
                     del self.data[v]
 
-        self.header = ""
+       self.header = self.piece_data.get("name", "")
+
         self.details = []
 
         description = self.piece_data.get("description", "")
         if description != u"":
-            self.details = [u"{}】\n{}".format(description, self.piece_data["piece"])]
+            self.details = [u"【{}】\n{}\n".format(description, self.piece_data["piece"])]
         
         self.filtered = True
         if "filters" in self.piece_data:
