@@ -9,11 +9,13 @@ class Piece(object):
         self.pass_data = args.get("pass_data", {})
         self.piece_data = args.get("piece_data", {})
         self.logger = args.get("logger", False)
+        self.module = args.get("module", False)
         """
          1: successed
          0: failed
         -1: filtered
-
+        -2: process stopped
+        -3: piece name not exists
         """
         self.result_type = 1
         if not self.logger:
@@ -33,10 +35,9 @@ class Piece(object):
                     self.data[k] = self.data[v]
                     del self.data[v]
 
-       self.header = self.piece_data.get("name", "")
-
+        self.header = self.piece_data["name"]
         self.details = []
-
+        
         description = self.piece_data.get("description", "")
         if description != u"":
             self.details = [u"【{}】\n{}\n".format(description, self.piece_data["piece"])]
@@ -55,8 +56,15 @@ class Piece(object):
                         if v != self.data[k]:
                             self.filtered = False
         
-        if not self.filtered:
-            self.logger.debug("process skipped")
         
     def execute(self, pipe_args={}):
+        if not self.filtered:
+            self.logger.debug("process skipped")
+            self.header += ":skipped"
+            return pipe_args
+        else:
+            self.module.piece_data = self.piece_data
+            self.module.data = self.data
+            self.module.execute(pipe_args, logger=self.logger)
+
         return pipe_args

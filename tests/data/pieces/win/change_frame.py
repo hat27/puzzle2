@@ -13,46 +13,50 @@
 # ****** SETTINGS END (DO NOT TOUCH) ******
 
 import os
-from puzzle2.Piece import Piece
 
 _PIECE_NAME_ = "ChangeFrame"
+piece_data = {}
+data = {}
+header = ""
+details = []
+result_type = 0
 
-class ChangeFrame(Piece):
-    def __init__(self, **args):
-        super(ChangeFrame, self).__init__(**args)
-        self.name = _PIECE_NAME_
+def execute(pipe_args={}, **kwargs):
+    global header
+    global details
+    global result_type
 
-    def execute(self, pipe_args={}):
-        self.header = "file open job"
-        self.logger.info("frame is: {}".format(self.data["frame"]))
-        frame = self.data["frame"] + 100
-        self.pass_data["frame"] = frame
-        self.result_type = "successed"
-        self.logger.info("set frame to: {}".format(frame))
-        self.logger.debug("set frame to: {}".format(frame))
-        self.details.append("change frame to {}".format(frame))
+    logger = kwargs["logger"]
 
-        print(self.piece_data.get("a", "not exists"))
+    if logger:
+        logger.info("frame is: {}".format(data["frame"]))
 
-        return self.pass_data
+    frame = data["frame"] + 100
+    pipe_args["frame"] = frame
+    print(piece_data)
+    if logger:
+        logger.info("set frame to: {}".format(frame))
+        logger.debug("set frame to: {}".format(frame))
+    details.append("change frame to {}".format(frame))
+
+    header = "test"
+
+    print(pipe_args.get("a", "not exists"))
+
+    result_type = 1
+    pipe_args["TEST"] = 14253647
+    return pipe_args
 
 
 if __name__ == "__main__":
     # from config file
-    piece = {"a": 2, "paint": {"frame": "@frame"}}
+    piece_data = {"a": 2, "paint": {"frame": "@frame"}}
 
     # data
-    data = {"frame": 1}
+    data = {"frame": 156789}
 
     # from previus job
     pass_data = {"frame": 10}
 
-
-    x = ChangeFrame(data=data)
-    x.execute()
-
-    x = ChangeFrame(piece_data=piece, data=data)
-    x.execute()
-
-    x = ChangeFrame(piece_data=piece, data=data, pass_data=pass_data)
-    x.execute()    
+    execute(logger=None)
+    print(header)

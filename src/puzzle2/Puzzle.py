@@ -13,6 +13,7 @@ import subprocess
 from . import PzLog
 from . import pz_env as pz_env
 from . import pz_config as pz_config
+from . import Piece
 
 try:
     reload
@@ -145,6 +146,50 @@ class Puzzle(object):
             self.force_close()
 
     def play(self, pieces, data, pass_data):
+        """
+         1: successed
+         0: failed
+        -1: filtered
+        -2: process stopped
+        -3: piece name not exists
+        """
+        def _fit(piece_data, data, pass_data):
+            def _to_piece(piece_data, data, pass_data, module, logger):
+                if not logger:
+                    logger = self.logger 
+                piece = Piece.Piece(module=module, 
+                              piece_data=piece_data, 
+                              data=data, 
+                              pass_data=pass_data, 
+                              logger=logger)
+
+                results = piece.execute()
+                return piece.result_type, piece.header, piece.details, results
+
+            hook_name = piece_data["piece"]
+            header = ""
+            detail = ""
+            try:
+                self.logger.debug(hook_name)
+                mod = importlib.import_module(hook_name)
+                reload(mod)
+                if hasattr(mod, "_PIECE_NAME_"):
+                    result_type, header, details, results = _to_piece(piece_data, data, pass_data, mod, self.logger)
+                else:
+                    return -3, pass_data, header, detail
+
+                inp = datetime.datetime.now()
+                # if not mod.filtered:
+                #     return -1, pass_data, "filtered", detail
+                
+                self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
+                return result_type, results, header, details
+
+            except:
+                self.logger.debug(traceback.format_exc())
+                return 0, pass_data, header, traceback.format_exc()
+
+
         def _play(piece_data_, data_, common_, part_, pass_data_):
             if isinstance(data_, list):
                 messages_ = []
@@ -154,7 +199,7 @@ class Puzzle(object):
 
                 for i, d in enumerate(data_):
                     if self.break_:
-                        return False, pass_data_, u"puzzle process stopped"
+                        return -2, pass_data_, u"puzzle process stopped"
 
                     flg_, pass_data_, message_ = _play(piece_data_=piece_data_,
                                                         data_=d,
@@ -163,9 +208,7 @@ class Puzzle(object):
                                                         pass_data_=pass_data_)
 
                     messages_.extend(message_)
-
-                    if not flg_ and piece_data_.get("force"):
-
+                    if not flg_:
                         self.break_ = True
 
                 return flg_, pass_data_, messages_
@@ -176,7 +219,7 @@ class Puzzle(object):
                 data_ = temp_common
                 for piece_data_ in pieces.get(part_, []):
                     if self.break_:
-                        message_ = ["process stopped",
+                        message_ = [-2,
                                     piece_data_.get("name", ""),
                                     piece_data_.get("description", ""),
                                     u"puzzle process stopped",
@@ -185,9 +228,9 @@ class Puzzle(object):
                         messages_.append(message_)
                         return False, pass_data_, messages_
 
-                    flg_, pass_data_, header_, detail_ = self.fit(piece_data=piece_data_,
-                                                                  data=data_,
-                                                                  pass_data=pass_data_)
+                    flg_, pass_data_, header_, detail_ = _fit(piece_data=piece_data_,
+                                                              data=data_,
+                                                              pass_data=pass_data_)
 
                     if header_ is not None:
                         message_ = [flg_,
@@ -202,7 +245,7 @@ class Puzzle(object):
                         return flg_, pass_data_, messages_
 
                 return True, pass_data_, messages_
-        
+
         self.break_ = False
         inp = datetime.datetime.now()
         messages = []
@@ -216,11 +259,11 @@ class Puzzle(object):
             data.setdefault(part, {})
             self.logger.debug("{}:".format(part))
             flg, self.pass_data, message = _play(piece_data_=pieces[part],
-                                                                    data_=data[part],
-                                                                    common_=common,
-                                                                    part_=part,
-                                                                    pass_data_=self.pass_data
-                                                                    )
+                                                 data_=data[part],
+                                                 common_=common,
+                                                 part_=part,
+                                                 pass_data_=self.pass_data)
+
             if isinstance(message, list):
                 messages.extend(message)
             else:
@@ -232,43 +275,15 @@ class Puzzle(object):
             self.break_ = False
             self.pass_data["messages"] = messages
             flg, self.pass_data, message = _play(piece_data_=pieces["finally"],
-                                                                    data_={},
-                                                                    common_=common,
-                                                                    part_="finally",
-                                                                    pass_data_=self.pass_data)
+                                                 data_={},
+                                                 common_=common,
+                                                 part_="finally",
+                                                 pass_data_=self.pass_data)
 
         self.logger.debug("takes: %s" % str(datetime.datetime.now() - inp))
         self.close_event(messages)
 
         return messages
-
-    def fit(self, piece_data, data, pass_data):
-        hook_name = piece_data["piece"]
-        header = ""
-        detail = ""
-        try:
-            self.logger.debug(hook_name)
-            mod = importlib.import_module(hook_name)
-            reload(mod)
-            if hasattr(mod, "_PIECE_NAME_"):
-                mod = getattr(mod, mod._PIECE_NAME_)(piece_data=piece_data,
-                                                     data=data,
-                                                     pass_data=pass_data,
-                                                     logger=self.logger)
-            else:
-                return False, pass_data, header, detail
-            inp = datetime.datetime.now()
-            if not mod.filtered:
-                return "filtered", pass_data, "filtered", detail
-            
-            # self.logger.debug(hook_name)
-            results = mod.execute()
-            self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
-            return mod.result_type, results, mod.header, mod.details
-
-        except:
-            self.logger.debug(traceback.format_exc())
-            return False, pass_data, header, traceback.format_exc()
 
 
 def execute_command(app, **kwargs):
