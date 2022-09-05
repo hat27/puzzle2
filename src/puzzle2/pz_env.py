@@ -7,13 +7,13 @@ _PLATFORM_ = False
 try:
     import maya.cmds
     _PLATFORM_ = "maya"
-except:
+except BaseException:
     pass
 
 try:
     from pyfbsdk import FBSystem
     _PLATFORM_ = "mobu"
-except:
+except BaseException:
     pass
 
 if not _PLATFORM_:
@@ -24,8 +24,8 @@ def get_log_template():
     return os.path.normpath(os.path.join(__file__, "../log.template")).replace("\\", "/")
 
 
-def get_temp_directory(relative=""):
-    path = "%s/puzzle/%s" % (_TEMP_PATH_, relative)
+def get_temp_directory(subdir=""):
+    path = "%s/%s" % (_TEMP_PATH_, subdir)
     if not os.path.exists(path):
         os.makedirs(path)
     if path.endswith("/"):
@@ -33,8 +33,8 @@ def get_temp_directory(relative=""):
     return path
 
 
-def get_log_directory():
-    return get_temp_directory("log")
+def get_log_directory(modulename="puzzle"):
+    return get_temp_directory("{}/log".format(modulename))
 
 
 def get_user_name():
