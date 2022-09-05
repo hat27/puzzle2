@@ -36,7 +36,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.success(msg, self.name)
 
     def result(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
@@ -45,7 +45,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.result(msg, self.name)
 
     def alert(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
@@ -54,7 +54,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.alert(msg, self.name)
 
     def critical(self, msg, *args, **kwargs):
         if self.isEnabledFor(CRITICAL):
@@ -62,7 +62,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.critical(msg, self.name)
 
     def error(self, msg, *args, **kwargs):
         if self.isEnabledFor(ERROR):
@@ -70,7 +70,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.error(msg, self.name)
 
     def warning(self, msg, *args, **kwargs):
         if self.isEnabledFor(WARNING):
@@ -78,7 +78,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.warning(msg, self.name)
 
     def info(self, msg, *args, **kwargs):
         if self.isEnabledFor(INFO):
@@ -86,7 +86,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.info(msg, self.name)
 
     def debug(self, msg, *args, **kwargs):
         if self.isEnabledFor(DEBUG):
@@ -94,7 +94,7 @@ class PzLogger(logging.Logger):
 
             if "ui" in kwargs:
                 ui = kwargs["ui"]
-                # Do something additional for ui (MayaBatcher UI)
+                ui.debug(msg, self.name)
 
 
 # Set PzLogger as the default Class to be called when using getLogger()
