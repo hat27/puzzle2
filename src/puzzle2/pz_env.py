@@ -2,22 +2,22 @@
 
 import os
 
-_TEMP_PATH_ = os.environ["TEMP"].split(";")[0].replace("\\", "/")
-_PLATFORM_ = False
+TEMP_PATH = os.environ["TEMP"].split(";")[0].replace("\\", "/")
+PLATFORM = False
 try:
     import maya.cmds
-    _PLATFORM_ = "maya"
+    PLATFORM = "maya"
 except BaseException:
     pass
 
 try:
     from pyfbsdk import FBSystem
-    _PLATFORM_ = "mobu"
+    PLATFORM = "mobu"
 except BaseException:
     pass
 
-if not _PLATFORM_:
-    _PLATFORM_ = "win"
+if not PLATFORM:
+    PLATFORM = "win"
 
 
 def get_log_template():
@@ -25,7 +25,7 @@ def get_log_template():
 
 
 def get_temp_directory(subdir=""):
-    path = "%s/%s" % (_TEMP_PATH_, subdir)
+    path = "%s/%s" % (TEMP_PATH, subdir)
     if not os.path.exists(path):
         os.makedirs(path)
     if path.endswith("/"):
@@ -44,4 +44,4 @@ def get_user_name():
 
 
 def get_platform():
-    return _PLATFORM_
+    return PLATFORM

@@ -13,34 +13,91 @@ from logging import getLogger, DEBUG, INFO, CRITICAL, ERROR
 
 from . import pz_env as pz_env
 
-# CRITICAL = 50
-# ERROR = 40
-# WARNING = 30
-# INFO = 20
-# DEBUG = 10
-SUCCESS = 0
-RESULT = 0
-logging.addLevelName(0, 'SUCCESS')
-logging.addLevelName(0, 'RESULT')
+CRITICAL = 50
+ERROR = 40
+WARNING = 30
+INFO = 20
+DEBUG = 10
+SUCCESS = 100  # Custom
+RESULT = 101  # Custom
+ALERT = 102  # Custom
+logging.addLevelName(SUCCESS, 'SUCCESS')
+logging.addLevelName(RESULT, 'RESULT')
+logging.addLevelName(ALERT, 'ALERT')
 
 
 class PzLogger(logging.Logger):
     super(logging.Logger)
 
-    def success(self, ui, msg, *args, **kwargs):
+    def success(self, msg, *args, **kwargs):
+        # CUSTOM OUTPUT
         if self.isEnabledFor(SUCCESS):
             self._log(SUCCESS, msg, args, **kwargs)
 
-            # Do something additional for ui (MayaBatcher UI)
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
 
-    def updateUI(self, ui, msg, level=INFO, *args, **kwargs):
-        if self.isEnabledFor(level):
-            self._log(level, msg, args, **kwargs)
+    def result(self, msg, *args, **kwargs):
+        # CUSTOM OUTPUT
+        if self.isEnabledFor(RESULT):
+            self._log(RESULT, msg, args, **kwargs)
 
-            # Do something additional for ui (MayaBatcher UI)
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def alert(self, msg, *args, **kwargs):
+        # CUSTOM OUTPUT
+        if self.isEnabledFor(ALERT):
+            self._log(ALERT, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def critical(self, msg, *args, **kwargs):
+        if self.isEnabledFor(CRITICAL):
+            self._log(CRITICAL, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def error(self, msg, *args, **kwargs):
+        if self.isEnabledFor(ERROR):
+            self._log(ERROR, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def warning(self, msg, *args, **kwargs):
+        if self.isEnabledFor(WARNING):
+            self._log(WARNING, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def info(self, msg, *args, **kwargs):
+        if self.isEnabledFor(INFO):
+            self._log(INFO, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
+
+    def debug(self, msg, *args, **kwargs):
+        if self.isEnabledFor(DEBUG):
+            self._log(DEBUG, msg, args, **kwargs)
+
+            if "ui" in kwargs:
+                ui = kwargs["ui"]
+                # Do something additional for ui (MayaBatcher UI)
 
 
-# Set CustomLogger as the default to be called when using getLogger()
+# Set PzLogger as the default Class to be called when using getLogger()
 logging.setLoggerClass(PzLogger)
 
 
@@ -66,7 +123,7 @@ class PzLog(object):
             name = "unknown"
 
         self.template = pz_env.get_log_template()
-        self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory())
+        self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory("Pzlog"))
 
         self.name = name
         self.log_path = "{}/{}.log".format(self.log_directory, self.name)
@@ -123,8 +180,8 @@ class PzLog(object):
 
         print("config file:", self.config_path)
         logging.config.fileConfig(self.config_path)
-        # self.logger = getLogger(self.name)
-        self.logger = PzLogger(self.name)
+        self.logger = getLogger(self.name)
+        # self.logger = PzLogger(self.name)
 
         self.logger.propagate = False
 
