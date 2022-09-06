@@ -6,5 +6,5 @@ __version__ = "0.0.6"
 from . import pz_env
 from . import pz_config
 from . import PzLog
-from . import Piece
+from . import PzTask
 from . import Puzzle

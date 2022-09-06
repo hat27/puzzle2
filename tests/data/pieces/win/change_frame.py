@@ -12,47 +12,44 @@
 # OPEN AS: open
 # ****** SETTINGS END (DO NOT TOUCH) ******
 
-import os
-from puzzle2.Piece import Piece
+PIECE_NAME = "ChangeFrame"
 
-_PIECE_NAME_ = "ChangeFrame"
+def execute(task={}, data={}, data_piped={}, logger=None, **kwargs):
 
-class ChangeFrame(Piece):
-    def __init__(self, **args):
-        super(ChangeFrame, self).__init__(**args)
-        self.name = _PIECE_NAME_
+    if logger:
+        logger.info("frame is: {}".format(data["frame"]))
 
-    def execute(self, pipe_args={}):
-        self.header = "file open job"
-        self.logger.info("frame is: {}".format(self.data["frame"]))
-        frame = self.data["frame"] + 100
-        self.pass_data["frame"] = frame
-        self.result_type = "successed"
-        self.logger.info("set frame to: {}".format(frame))
-        self.logger.debug("set frame to: {}".format(frame))
-        self.details.append("change frame to {}".format(frame))
+    frame = data["frame"] + 100
+    data_piped["frame"] = frame
 
-        print(self.piece_data.get("a", "not exists"))
+    if logger:
+        logger.info("set frame to: {}".format(frame))
+        logger.debug("set frame to: {}".format(frame))
 
-        return self.pass_data
+        logger.details.append({"details": "change frame to {}".format(frame), 
+                            "name": task.get("name", "untitled"), 
+                            "header": "set frame task", 
+                            "status": 1,
+                            "comment": task.get("comment")})
+
+    # logger.error("ERROR occured!")
+    # logger.warning("Oops, something is wrong...")
+    # logger.success(ui, "FINISHED!")
+    # logger.updateUI(ui, "Updated!", level="RESULT")
+
+    data_piped["TEST"] = 14253647
+    status = 1
+    return {"status_code": status, "data_piped": data_piped}
 
 
 if __name__ == "__main__":
     # from config file
-    piece = {"a": 2, "paint": {"frame": "@frame"}}
+    task = {"a": 2, "paint": {"frame": "@frame"}}
 
     # data
-    data = {"frame": 1}
+    data = {"frame": 156789}
 
-    # from previus job
-    pass_data = {"frame": 10}
+    # from previus task
+    data_piped = {"frame": 10}
 
-
-    x = ChangeFrame(data=data)
-    x.execute()
-
-    x = ChangeFrame(piece_data=piece, data=data)
-    x.execute()
-
-    x = ChangeFrame(piece_data=piece, data=data, pass_data=pass_data)
-    x.execute()    
+    execute(task, data, data_piped, logger=None)
