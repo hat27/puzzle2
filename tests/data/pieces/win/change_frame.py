@@ -14,49 +14,47 @@
 
 import os
 
-_PIECE_NAME_ = "ChangeFrame"
-piece_data = {}
-data = {}
-header = ""
-details = []
-result_type = 0
+PIECE_NAME = "ChangeFrame"
+header = "test"
+# result_type = 0
 
-def execute(pipe_args={}, **kwargs):
-    global header
-    global details
-    global result_type
 
-    logger = kwargs["logger"]
+def execute(settings={}, data={}, data_piped={}, logger=None, **kwargs):
 
     if logger:
         logger.info("frame is: {}".format(data["frame"]))
 
     frame = data["frame"] + 100
-    pipe_args["frame"] = frame
-    print(piece_data)
+    data_piped["frame"] = frame
+    print(settings)
     if logger:
         logger.info("set frame to: {}".format(frame))
         logger.debug("set frame to: {}".format(frame))
-    details.append("change frame to {}".format(frame))
+
+    logger.details.append("change frame to {}".format(frame))
 
     header = "test"
 
-    print(pipe_args.get("a", "not exists"))
+    print(data_piped.get("a", "not exists"))
 
-    result_type = 1
-    pipe_args["TEST"] = 14253647
-    return pipe_args
+    # logger.error("ERROR occured!")
+    # logger.warning("Oops, something is wrong...")
+    # logger.success(ui, "FINISHED!")
+    # logger.updateUI(ui, "Updated!", level="RESULT")
+
+    data_piped["TEST"] = 14253647
+    return data_piped
 
 
 if __name__ == "__main__":
     # from config file
-    piece_data = {"a": 2, "paint": {"frame": "@frame"}}
+    settings = {"a": 2, "paint": {"frame": "@frame"}}
 
     # data
     data = {"frame": 156789}
 
     # from previus job
-    pass_data = {"frame": 10}
+    piped_data = {"frame": 10}
 
     execute(logger=None)
     print(header)
