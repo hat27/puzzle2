@@ -13,7 +13,7 @@ import subprocess
 from . import PzLog
 from . import pz_env as pz_env
 from . import pz_config as pz_config
-from . import Piece
+from .PzTask import PzTask
 
 try:
     reload
@@ -65,10 +65,10 @@ class Puzzle(object):
             if hasattr(handler, "baseFilename"):
                 self.logger.debug("baseFilename: {}".format(handler.baseFilename))
 
-        pieces_directory = kwargs.get("pieces_directory", False)
-        if pieces_directory:
-            if pieces_directory not in sys.path:
-                sys.path.append(pieces_directory)
+        task_directory = kwargs.get("task_directory", False)
+        if task_directory:
+            if task_directory not in sys.path:
+                sys.path.append(task_directory)
 
         if self.file_mode:
             self.play_as_file_mode()
@@ -81,33 +81,15 @@ class Puzzle(object):
         if os.environ.get("PUZZLE_FILE_MODE", False):
             return True
         return False
-
-    def force_close(self):
-        flg = True
-        message = "force close"
-
-        try:
-            import maya.cmds as cmds
-            import maya.mel as mel
-            mode = "maya"
-        except BaseException:
-            mode = "win"
-        if mode == "maya":
-            try:
-                mel.eval('scriptJob -cf "busy" "quit -f -ec 0";')
-                message = u"file app close: maya"
-                flg = True
-            except BaseException:
-                message = u"file app close failed: maya"
-                flg = False
-
-        return flg, message
+    
+    def set_order(self, order):
+        self.order = order
 
     def play_as_file_mode(self):
-        pz_path = os.environ["ALL_PIECES_PATH"]
-        keys = os.environ["PIECES_KEYS"]
+        pz_path = os.environ["ALL_TASKS_PATH"]
+        keys = os.environ["TASK_KEYS"]
         data_path = os.environ["PUZZLE_DATA_PATH"]
-        pass_path = os.environ.get("PUZZLE_PASS_PATH", "")
+        pipe_path = os.environ.get("PUZZLE_PIPE_PATH", "")
         pieces_directory = os.environ.get("PUZZLE_TASKS", False)
         if pieces_directory:
             if pieces_directory not in sys.path:
@@ -116,8 +98,8 @@ class Puzzle(object):
         info, data = pz_config.read(data_path)
         pz_info, pz_data = pz_config.read(pz_path)
 
-        if pass_path != "":
-            pass_info, data_piped = pz_config.read(pass_path)
+        if pipe_path != "":
+            pass_info, data_piped = pz_config.read(pipe_path)
         else:
             data_piped = None
         keys = [l.strip() for l in keys.split(";") if l != ""]
@@ -136,15 +118,36 @@ class Puzzle(object):
 
         return messages
 
-    def close_event(self, messages):
+    def close_event(self):
+        def _force_close():
+            flg = True
+            message = "force close"
+
+            try:
+                import maya.cmds as cmds
+                import maya.mel as mel
+                mode = "maya"
+            except BaseException:
+                mode = "win"
+            if mode == "maya":
+                try:
+                    mel.eval('scriptJob -cf "busy" "quit -f -ec 0";')
+                    message = u"file app close: maya"
+                    flg = True
+                except BaseException:
+                    message = u"file app close failed: maya"
+                    flg = False
+
+            return flg, message
+
         message_path = os.environ.get("PUZZLE_MESSAGE_OUTPUT", False)
         if message_path:
-            pz_config.save(message_path, messages)
+            pz_config.save(message_path, self.logger.details.get_all())
 
         if os.environ.get("PUZZLE_CLOSE_APP", False):
-            self.force_close()
+            _force_close()
 
-    def play(self, pieces, data, data_piped):
+    def play(self, tasks, data_set):
         """
          1: successed
          0: failed
@@ -152,137 +155,120 @@ class Puzzle(object):
         -2: task stopped
         -3: piece name not exists
         """
-        def _execute_task(task_settings, task_data, data_piped):
-            def _execute(task_settings, task_data, data_piped, module, logger):
+        def _execute_step(tasks, data, common, step, data_piped):
+            """
+            when data is list, same tasks run for each.
+            """
+            if isinstance(data, list):
+                flg = True
+                if len(data) == 0 and len(common) > 0:
+                    data = [common]
+
+                for i, d in enumerate(data):
+                    if self.break_:
+                        return -2, data_piped, u"puzzle task stopped"
+
+                    data_piped = _execute_step(tasks=tasks,
+                                               data=d,
+                                                common=common,
+                                                step=step,
+                                                data_piped=data_piped)
+
+                return data_piped
+            else:
+                """
+                "common" is special keyword.
+                we can use them everywhere
+                """
+                temp_common = copy.deepcopy(common)
+                temp_common.update(data)
+                data = temp_common
+                for task in tasks:
+                    if self.break_:
+                        return data_piped
+
+                    status, data_piped = _execute_task(task=task,
+                                                       data=data,
+                                                       data_piped=data_piped)
+
+                    if not status and task.get("force"):
+                        self.break_ = True
+                        return data_piped
+
+                return data_piped
+
+        def _execute_task(task, data, data_piped):
+            def _execute(task, data, data_piped, module, logger):
                 if not logger:
                     logger = self.logger
-                piece = Piece.Piece(module=module,
-                                    settings=task_settings,
-                                    data=task_data,
-                                    data_piped=data_piped,
-                                    logger=logger)
+                task = PzTask(module=module,
+                              task=task,
+                              data=data,
+                              data_piped=data_piped,
+                              logger=logger)
 
-                data_piped = piece.execute()
-                return piece.result_type, piece.header, piece.details, data_piped
+                status, data_piped = task.execute()
+                return status, data_piped
 
-            task_name = task_settings["module"]
-            header = ""
-            detail = ""
+            module_path = task["module"]
             try:
-                self.logger.debug(task_name)
-                mod = importlib.import_module(task_name)
-                reload(mod)
-                if hasattr(mod, "PIECE_NAME"):
-                    result_type, header, details, data_piped = _execute(task_settings, task_data, data_piped, mod, self.logger)
+                self.logger.debug(module_path)
+                module_ = importlib.import_module(module_path)
+                reload(module_)
+                if hasattr(module_, "PIECE_NAME"):
+                    status, data_piped = _execute(task, data, data_piped, module_, self.logger)
                 else:
-                    return -3, data_piped, header, detail
+                    return -3, data_piped
 
                 inp = datetime.datetime.now()
                 # if mod.skip:
                 #     return -1, data_piped, "skipped", detail
 
                 self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
-                return result_type, data_piped, header, details
+                return status, data_piped
 
             except BaseException:
                 self.logger.debug(traceback.format_exc())
-                return 0, data_piped, header, traceback.format_exc()
+                self.logger.details.append({"details": traceback.format_exc(), 
+                                            "name": task.get("name"), 
+                                            "header": "task failed by error", 
+                                            "status": 0, 
+                                            "comment": task.get("comment")})
 
-        def _execute_step(_task_settings, _task_data, _common, _step, _data_piped):
-            if isinstance(_task_data, list):
-                _messages = []
-                _flg = True
-                if len(_task_data) == 0 and len(_common) > 0:
-                    _task_data = [_common]
+                return 0, data_piped
 
-                for i, d in enumerate(_task_data):
-                    if self.break_:
-                        return -2, _data_piped, u"puzzle task stopped"
 
-                    _flg, _data_piped, _message = _execute_step(_task_settings=_task_settings,
-                                                                _task_data=d,
-                                                                _common=_common,
-                                                                _step=_step,
-                                                                _data_piped=_data_piped)
-
-                    _messages.extend(_message)
-                    if not _flg:
-                        self.break_ = True
-
-                return _flg, _data_piped, _messages
-            else:
-                _messages = []
-                temp_common = copy.deepcopy(common)
-                temp_common.update(_task_data)
-                _task_data = temp_common
-                for _task_settings in pieces.get(_step, []):
-                    if self.break_:
-                        _message = [-2,
-                                    _task_settings.get("name", ""),
-                                    _task_settings.get("comment", ""),
-                                    u"puzzle task stopped",
-                                    u"puzzle task stopped"]
-
-                        _messages.append(_message)
-                        return False, _data_piped, _messages
-
-                    _flg, _data_piped, _header, _detail = _execute_task(task_settings=_task_settings,
-                                                                        task_data=_task_data,
-                                                                        data_piped=_data_piped)
-
-                    if _header is not None:
-                        _message = [_flg,
-                                    _task_settings.get("name", ""),
-                                    _task_settings.get("comment", ""),
-                                    _header,
-                                    _detail]
-
-                        _messages.append(_message)
-                    if not _flg:
-                        self.break_ = True
-                        return _flg, _data_piped, _messages
-
-                return True, _data_piped, _messages
-
+        """
+        break when flg is not 1 and force in task settings
+        """
+        self.logger.details.clear()
         self.break_ = False
         inp = datetime.datetime.now()
-        messages = []
         self.logger.debug("start\n")
-        common = data.get("common", {})
+        common = data_set.get("common", {})
         for step in self.order:
-            if step not in pieces:
+            if step not in tasks:
                 self.logger.debug("")
                 continue
 
-            data.setdefault(step, {})
+            data_set.setdefault(step, {})
             self.logger.debug("{}:".format(step))
-            flg, self.data_piped, message = _execute_step(_task_settings=pieces[step],
-                                                          _task_data=data[step],
-                                                          _common=common,
-                                                          _step=step,
-                                                          _data_piped=self.data_piped)
+            self.data_piped = _execute_step(tasks=tasks[step],
+                                            data=data_set[step],
+                                            common=common,
+                                            step=step,
+                                            data_piped=self.data_piped)
 
-            if isinstance(message, list):
-                messages.extend(message)
-            else:
-                messages.append(message)
-
-            self.logger.debug("")
-
-        if "finally" in pieces:
+        if "finally" in tasks:
             self.break_ = False
-            self.data_piped["messages"] = messages
-            flg, self.data_piped, message = _execute_step(_task_settings=pieces["finally"],
-                                                          _task_data={},
-                                                          _common=common,
-                                                          _step="finally",
-                                                          _data_piped=self.data_piped)
+            self.data_piped = _execute_step(tasks=tasks["finally"],
+                                            data={},
+                                            common=common,
+                                            step="finally",
+                                            data_piped=self.data_piped)
 
-        self.logger.debug("takes: %s" % str(datetime.datetime.now() - inp))
-        self.close_event(messages)
-
-        return messages
-
+        self.logger.debug("takes: {}".format(datetime.datetime.now() - inp))
+        self.close_event()
 
 def execute_command(app, **kwargs):
     def _get_script(script_):
@@ -330,16 +316,16 @@ def execute_command(app, **kwargs):
     if kwargs.get("bat_file", False):
         bat = "SET PUZZLE_FILE_MODE=True\n"
         bat += "SET PUZZLE_DATA_PATH={}\n".format(str(kwargs["data_path"]))
-        bat += "SET ALL_PIECES_PATH={}\n".format(str(kwargs["piece_path"]))
+        bat += "SET ALL_TASKS_PATH={}\n".format(str(kwargs["piece_path"]))
         bat += "SET PUZZLE_LOGGER_NAME={}\n".format(str(kwargs["log_name"]))
         bat += "SET PUZZLE_LOGGER_DIRECTORY={}\n".format(str(kwargs.get("log_directory", False)))
-        bat += "SET PIECES_KEYS={}\n".format(str(kwargs["keys"]))
+        bat += "SET TASK_KEYS={}\n".format(str(kwargs["keys"]))
         bat += "SET PUZZLE_APP={}\n".format(str(app))
         bat += "SET PUZZLE_PATH={}\n".format(str(kwargs["sys_path"]))
         bat += "SET PUZZLE_TASKS={}\n".format(str(kwargs["task_path"]))
         bat += "SET PUZZLE_MESSAGE_OUTPUT={}\n".format(str(kwargs["message_output"]))
-        if "pass_path" in kwargs:
-            bat += "SET PUZZLE_PASS_PATH={}\n".format(str(kwargs["pass_path"]))
+        if "pipe_path" in kwargs:
+            bat += "SET PUZZLE_PIPE_PATH={}\n".format(str(kwargs["pipe_path"]))
 
         if "order" in kwargs:
             bat += "SET PUZZLE_ORDER={}\n".format(str(kwargs["order"]))
@@ -367,16 +353,16 @@ def execute_command(app, **kwargs):
         env_copy = os.environ.copy()
         env_copy["PUZZLE_FILE_MODE"] = "True"
         env_copy["PUZZLE_DATA_PATH"] = str(kwargs["data_path"])
-        env_copy["ALL_PIECES_PATH"] = str(kwargs["piece_path"])
+        env_copy["ALL_TASKS_PATH"] = str(kwargs["piece_path"])
         env_copy["PUZZLE_LOGGER_NAME"] = str(kwargs["log_name"])
         env_copy["PUZZLE_LOGGER_DIRECTORY"] = str(kwargs.get("log_directory", False))
-        env_copy["PIECES_KEYS"] = str(kwargs["keys"])
+        env_copy["TASK_KEYS"] = str(kwargs["keys"])
         env_copy["PUZZLE_APP"] = str(app)
         env_copy["PUZZLE_PATH"] = str(kwargs["sys_path"])
         env_copy["PUZZLE_TASKS"] = str(kwargs["task_path"])
         env_copy["PUZZLE_MESSAGE_OUTPUT"] = str(kwargs["message_output"])
-        if "pass_path" in kwargs:
-            env_copy["PUZZLE_PASS_PATH"] = str(kwargs["pass_path"])
+        if "pipe_path" in kwargs:
+            env_copy["PUZZLE_PIPE_PATH"] = str(kwargs["pipe_path"])
 
         if "order" in kwargs:
             env_copy["PUZZLE_ORDER"] = str(kwargs["order"])

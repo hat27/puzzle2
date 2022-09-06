@@ -10,24 +10,23 @@ if not module_path in sys.path:
 
 sys.dont_write_bytecode = True
 
-print(module_path)
 from puzzle2.Puzzle import Puzzle, execute_command
 
-pieces = {
+tasks = {
             "main": 
                       [{
                        "name": "reference chara",
                        "description": "reference chara assets",
-                       "piece": "tests.data.pieces.win.change_frame",
-                       "paint": {
+                       "module": "tests.data.pieces.win.change_frame",
+                       "inputs": {
                         "frame": "TEST"
                         }
                        },
                        {
                        "name": "reference chara",
                        "description": "reference chara assets",
-                       "piece": "tests.data.pieces.win.change_frame",
-                       "paint": {
+                       "module": "tests.data.pieces.win.change_frame",
+                       "inputs": {
                                 "frame": "@TEST"
                                 }
                        }
@@ -50,6 +49,7 @@ data = {
 
 os.environ["__PUZZLE_PATH__"] = module_path
 x = Puzzle("sample", new=True, update_log_config=True)
-results = x.play(pieces, data, {})
-for result in results:
-  print(result)
+results = x.play(tasks, data)
+print(x.logger.details.get_header())
+print(x.logger.details.get_details())
+print(x.logger.details.get_all())

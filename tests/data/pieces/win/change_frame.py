@@ -12,30 +12,25 @@
 # OPEN AS: open
 # ****** SETTINGS END (DO NOT TOUCH) ******
 
-import os
-
 PIECE_NAME = "ChangeFrame"
-header = "test"
-# result_type = 0
 
-
-def execute(settings={}, data={}, data_piped={}, logger=None, **kwargs):
+def execute(task={}, data={}, data_piped={}, logger=None, **kwargs):
 
     if logger:
         logger.info("frame is: {}".format(data["frame"]))
 
     frame = data["frame"] + 100
     data_piped["frame"] = frame
-    print(settings)
+
     if logger:
         logger.info("set frame to: {}".format(frame))
         logger.debug("set frame to: {}".format(frame))
 
-    logger.details.append("change frame to {}".format(frame))
-
-    header = "test"
-
-    print(data_piped.get("a", "not exists"))
+        logger.details.append({"details": "change frame to {}".format(frame), 
+                            "name": task.get("name", "untitled"), 
+                            "header": "set frame task", 
+                            "status": 1,
+                            "comment": task.get("comment")})
 
     # logger.error("ERROR occured!")
     # logger.warning("Oops, something is wrong...")
@@ -43,18 +38,18 @@ def execute(settings={}, data={}, data_piped={}, logger=None, **kwargs):
     # logger.updateUI(ui, "Updated!", level="RESULT")
 
     data_piped["TEST"] = 14253647
-    return data_piped
+    status = 1
+    return {"status_code": status, "data_piped": data_piped}
 
 
 if __name__ == "__main__":
     # from config file
-    settings = {"a": 2, "paint": {"frame": "@frame"}}
+    task = {"a": 2, "paint": {"frame": "@frame"}}
 
     # data
     data = {"frame": 156789}
 
-    # from previus job
-    piped_data = {"frame": 10}
+    # from previus task
+    data_piped = {"frame": 10}
 
-    execute(logger=None)
-    print(header)
+    execute(task, data, data_piped, logger=None)
