@@ -25,9 +25,21 @@ logging.addLevelName(SUCCESS, 'SUCCESS')
 logging.addLevelName(RESULT, 'RESULT')
 logging.addLevelName(ALERT, 'ALERT')
 
+class Details(list):
+    def get_header(self):
+        return [l["header"] for l in self]
+    
+    def get_details(self, key=None):
+        if key:
+            return [l["details"] for l in self if l["name"] == key if "details" in l]
+        return [l["details"] for l in self if "details" in l]
 
+    def get_all(self):
+        return self
+    
 class PzLogger(logging.Logger):
     super(logging.Logger)
+    details = Details()
 
     def success(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
