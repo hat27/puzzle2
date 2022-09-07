@@ -25,10 +25,11 @@ logging.addLevelName(SUCCESS, 'SUCCESS')
 logging.addLevelName(RESULT, 'RESULT')
 logging.addLevelName(ALERT, 'ALERT')
 
+
 class Details(list):
     def get_header(self):
         return [l["header"] for l in self]
-    
+
     def get_details(self, key=None):
         if key:
             return [l["details"] for l in self if l["name"] == key if "details" in l]
@@ -36,85 +37,99 @@ class Details(list):
 
     def get_all(self):
         return self
-    
+
+# TODO: 将来的にPzLoggerとPzLogを統合する事を検討
+
+
 class PzLogger(logging.Logger):
     super(logging.Logger)
     details = Details()
+    ui = None
 
+    def __init__(
+        self,
+        *args,
+        **kwargs
+    ):
+        logging.Logger.__init__(self, *args, **kwargs)
+        # with this pattern, it's rarely necessary to propagate the| error up to parent
+        self.ui = kwargs.get("ui", None)
+
+    def set_ui(self, ui):
+        """
+        Set ui to additionally reflect changes to when using logging.
+        """
+        self.ui = ui
+
+    def update_ui(self, msg, level_name, ui=None, skip_ui_update=False):
+        """
+        Update the UI via view update function provided in the ui object,
+        e.g., ui.success(), ui.result()
+        The function name must match level name.
+
+        Args:
+            msg (str): Message to show in UI.
+            level_name (str): Level name which should be the same as UI update function name.
+            ui (ui object, optional): If updating a different UI than the one specified on init(), pass it here.
+            skip_ui_update (bool, optional): Skip ui update if specified in the logging function parameter.
+        """
+        ui = ui if ui else self.ui
+        if ui and (not skip_ui_update) and hasattr(ui, level_name):
+            # Get the view update function provided in the ui object, e.g., ui.success(), ui.result()
+            ui_update_function = getattr(ui, level_name)
+            ui_update_function(msg, self.name)  # Pass message and logger name.
+
+    # -----------------------------------------------------------------------------
+    # For all logging functions below, pass "skip_ui_update=True" to skip ui update.
+    # -----------------------------------------------------------------------------
     def success(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
         if self.isEnabledFor(SUCCESS):
             self._log(SUCCESS, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.success(msg, self.name)
+            self.update_ui(msg, "success", **kwargs)
 
     def result(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
         if self.isEnabledFor(RESULT):
             self._log(RESULT, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.result(msg, self.name)
+            self.update_ui(msg, "result", **kwargs)
 
     def alert(self, msg, *args, **kwargs):
         # CUSTOM OUTPUT
         if self.isEnabledFor(ALERT):
             self._log(ALERT, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.alert(msg, self.name)
+            self.update_ui(msg, "alert", **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.critical(msg, self.name)
+            self.update_ui(msg, "critical", **kwargs)
 
     def error(self, msg, *args, **kwargs):
         if self.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.error(msg, self.name)
+            self.update_ui(msg, "error", **kwargs)
 
     def warning(self, msg, *args, **kwargs):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.warning(msg, self.name)
+            self.update_ui(msg, "warning", **kwargs)
 
     def info(self, msg, *args, **kwargs):
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.info(msg, self.name)
+            self.update_ui(msg, "info", **kwargs)
 
     def debug(self, msg, *args, **kwargs):
         if self.isEnabledFor(DEBUG):
             self._log(DEBUG, msg, args, **kwargs)
-
-            if "ui" in kwargs:
-                ui = kwargs["ui"]
-                ui.debug(msg, self.name)
+            self.update_ui(msg, "debug", **kwargs)
 
 
 # Set PzLogger as the default Class to be called when using getLogger()
 logging.setLoggerClass(PzLogger)
 
-
 # log.success('Hello World')
-# log.updateUI('Hello World')
 
 
 class PzLog(object):
