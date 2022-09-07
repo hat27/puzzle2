@@ -12,13 +12,17 @@ class Piece(object):
         self.logger = args.get("logger", False)
         self.module = args.get("module", False)
         """
-         1: successed
-         0: failed
-        -1: skip
-        -2: task stopped
-        -3: piece name not exists
+         --------------------
+         response status_code
+         --------------------
+         0: Success
+         1: Error - error (generic)
+         2: Error - error (type specified)
+        -1: Skipped
+        -2: Task stopped
+        -3: PIECE_NAME not found
         """
-        self.result_type = 1
+        self.status_code = 0
         if not self.logger:
             log = PzLog.PzLog()
             self.logger = log.logger

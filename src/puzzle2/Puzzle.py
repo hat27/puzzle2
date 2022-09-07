@@ -146,11 +146,15 @@ class Puzzle(object):
 
     def play(self, pieces, data, data_piped):
         """
-         1: successed
-         0: failed
-        -1: skipped
-        -2: task stopped
-        -3: piece name not exists
+         --------------------
+         response status_code
+         --------------------
+         0: Success
+         1: Error - error (generic)
+         2: Error - error (type specified)
+        -1: Skipped
+        -2: Task stopped
+        -3: PIECE_NAME not found
         """
         def _execute_task(task_settings, task_data, data_piped):
             def _execute(task_settings, task_data, data_piped, module, logger):
@@ -163,7 +167,7 @@ class Puzzle(object):
                                     logger=logger)
 
                 data_piped = piece.execute()
-                return piece.result_type, piece.header, piece.details, data_piped
+                return piece.status_code, piece.header, piece.details, data_piped
 
             task_name = task_settings["module"]
             header = ""
@@ -173,7 +177,7 @@ class Puzzle(object):
                 mod = importlib.import_module(task_name)
                 reload(mod)
                 if hasattr(mod, "PIECE_NAME"):
-                    result_type, header, details, data_piped = _execute(task_settings, task_data, data_piped, mod, self.logger)
+                    status_code, header, details, data_piped = _execute(task_settings, task_data, data_piped, mod, self.logger)
                 else:
                     return -3, data_piped, header, detail
 
@@ -182,11 +186,11 @@ class Puzzle(object):
                 #     return -1, data_piped, "skipped", detail
 
                 self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
-                return result_type, data_piped, header, details
+                return status_code, data_piped, header, details
 
             except BaseException:
                 self.logger.debug(traceback.format_exc())
-                return 0, data_piped, header, traceback.format_exc()
+                return 1, data_piped, header, traceback.format_exc()
 
         def _execute_step(_task_settings, _task_data, _common, _step, _data_piped):
             if isinstance(_task_data, list):
@@ -206,7 +210,7 @@ class Puzzle(object):
                                                                 _data_piped=_data_piped)
 
                     _messages.extend(_message)
-                    if not _flg:
+                    if _flg != 0:
                         self.break_ = True
 
                 return _flg, _data_piped, _messages
@@ -238,7 +242,7 @@ class Puzzle(object):
                                     _detail]
 
                         _messages.append(_message)
-                    if not _flg:
+                    if _flg != 0:
                         self.break_ = True
                         return _flg, _data_piped, _messages
 

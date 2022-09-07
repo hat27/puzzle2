@@ -16,7 +16,6 @@ import os
 
 PIECE_NAME = "ChangeFrame"
 header = "test"
-# result_type = 0
 
 
 def execute(settings={}, data={}, data_piped={}, logger=None, **kwargs):
