@@ -9,15 +9,15 @@ else:
     import configparser
 
 import logging.config
-from logging import getLogger, DEBUG, INFO, CRITICAL, ERROR
+from logging import getLogger, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 from . import pz_env as pz_env
 
-CRITICAL = 50
-ERROR = 40
-WARNING = 30
-INFO = 20
-DEBUG = 10
+# CRITICAL = 50
+# ERROR = 40
+# WARNING = 30
+# INFO = 20
+# DEBUG = 10
 SUCCESS = 100  # Custom
 RESULT = 101  # Custom
 ALERT = 102  # Custom
@@ -118,16 +118,17 @@ class PzLog(object):
         :param use_default_config: Reset log.template file
         :param logger_level: Logger level
         :param log_directory: Dir for log files
+        :param log_filename: Filename excluding extension to be used for .log and .conf files
         """
         if name is None:
             name = "unknown"
 
         self.template = pz_env.get_log_template()
         self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory("Pzlog"))
-
         self.name = name
-        self.log_path = "{}/{}.log".format(self.log_directory, self.name)
-        self.config_path = "{}/config/{}.conf".format(self.log_directory, self.name)
+        self.filename = kwargs.get("log_filename", name)  # Filename for log and config files
+        self.log_path = "{}/{}.log".format(self.log_directory, self.filename)  # Log file path
+        self.config_path = "{}/config/{}.conf".format(self.log_directory, self.filename)  # Config file path
 
         if new:
             # Remove all existing handlers for self.name
@@ -158,7 +159,8 @@ class PzLog(object):
                 "keys": "root, {}".format(self.name)
             },
                 "handler_file_handler": {
-                "args": "('{}', 'D')".format(self.log_path)
+                # "args": "('{}', 'a')".format(self.log_path)  # FileHandler - Suggestion
+                "args": "('{}', 'D')".format(self.log_path)  # TimedRotatingFileHandler
             }
             }
 
