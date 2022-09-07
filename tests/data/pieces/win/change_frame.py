@@ -14,6 +14,7 @@
 
 PIECE_NAME = "ChangeFrame"
 
+
 def execute(task={}, data={}, data_piped={}, logger=None, **kwargs):
 
     if logger:
@@ -26,11 +27,11 @@ def execute(task={}, data={}, data_piped={}, logger=None, **kwargs):
         logger.info("set frame to: {}".format(frame))
         logger.debug("set frame to: {}".format(frame))
 
-        logger.details.append({"details": "change frame to {}".format(frame), 
-                            "name": task.get("name", "untitled"), 
-                            "header": "set frame task", 
-                            "status": 1,
-                            "comment": task.get("comment")})
+        logger.details.append({"details": "change frame to {}".format(frame),
+                               "name": task.get("name", "untitled"),
+                               "header": "set frame task",
+                               "status": 1,
+                               "comment": task.get("comment")})
 
     # logger.error("ERROR occured!")
     # logger.warning("Oops, something is wrong...")

@@ -13,6 +13,17 @@ class PzTask(object):
 
         self.logger = args.get("logger", False)
         self.module = args.get("module", False)
+        self.return_code = 0
+        """
+         --------------------
+         response return_code
+         --------------------
+         0: Success
+         1: Error
+         2: Skipped
+         3: Task stopped
+         4: PIECE_NAME not found
+        """
 
         self.name = self.task.get("name", "untitled")
         if not self.logger:
@@ -55,23 +66,29 @@ class PzTask(object):
 
     def execute(self, data_piped={}):
         """
-        status
-         1: successed
-         0: failed
-        -1: skip
-        -2: task stopped
-        -3: task name not exists
+         --------------------
+         response return_code
+         --------------------
+         0: Success
+         1: Error
+         2: Skipped
+         3: Task stopped
+         4: PIECE_NAME not found
         """
+
+        # Use self.data_piped by default.
+        # Only use optional data_piped if provided, such as executing this instance several times.
+        data_piped = data_piped if data_piped else self.data_piped
+
         if self.skip:
             self.logger.debug("task skipped")
-            self.logger.details.append({"name": self.name, 
-                                        "header": "skipped: {}".format(self.name), 
-                                        "status": -1,
+            self.logger.details.append({"name": self.name,
+                                        "header": "skipped: {}".format(self.name),
+                                        "return_code": 2,
                                         "comment": self.task.get("comment", "")})
+            response = {"return_code": 2, "data_piped": data_piped}
         else:
-            result = self.module.execute(task=self.task,
-                                         data=self.data,
-                                         data_piped=self.data_piped,
-                                         logger=self.logger)
-        status = 1
-        return result["status_code"], result["data_piped"]
+            event = {"task": self.task, "data": self.data, "data_piped": data_piped}
+            context = {"logger": self.logger}
+            response = self.module.execute(event, context)
+        return response

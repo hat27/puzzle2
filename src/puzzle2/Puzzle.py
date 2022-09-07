@@ -23,6 +23,12 @@ except NameError:
         from importlib import reload
 
 
+# RETURN_SUCCESS = 0
+# RETURN_ERROR = 1
+# RETURN_SKIPPED = 2
+# RETURN_TASK_STOPPED = 3
+# RETURN_PIECE_NOT_FOUND = 4
+
 class Puzzle(object):
     def __init__(self, name="puzzle", file_mode=False, **kwargs):
         """
@@ -81,7 +87,7 @@ class Puzzle(object):
         if os.environ.get("PUZZLE_FILE_MODE", False):
             return True
         return False
-    
+
     def set_order(self, order):
         self.order = order
 
@@ -149,13 +155,16 @@ class Puzzle(object):
 
     def play(self, tasks, data_set):
         """
-         1: successed
-         0: failed
-        -1: skipped
-        -2: task stopped
-        -3: piece name not exists
+         --------------------
+         response return_code
+         --------------------
+         0: Success
+         1: Error
+         2: Skipped
+         3: Task stopped
+         4: PIECE_NAME not found
         """
-        def _execute_step(tasks, data, common, step, data_piped):
+        def _execute_step(tasks, data, common, step, response):
             """
             when data is list, same tasks run for each.
             """
@@ -166,15 +175,16 @@ class Puzzle(object):
 
                 for i, d in enumerate(data):
                     if self.break_:
-                        return -2, data_piped, u"puzzle task stopped"
+                        response["return_code"] = 3
+                        return response
 
-                    data_piped = _execute_step(tasks=tasks,
-                                               data=d,
-                                                common=common,
-                                                step=step,
-                                                data_piped=data_piped)
+                    response = _execute_step(tasks=tasks,
+                                             data=d,
+                                             common=common,
+                                             step=step,
+                                             response=response)
 
-                return data_piped
+                return response
             else:
                 """
                 "common" is special keyword.
@@ -185,17 +195,17 @@ class Puzzle(object):
                 data = temp_common
                 for task in tasks:
                     if self.break_:
-                        return data_piped
+                        return response
 
-                    status, data_piped = _execute_task(task=task,
-                                                       data=data,
-                                                       data_piped=data_piped)
+                    response = _execute_task(task=task,
+                                             data=data,
+                                             data_piped=response["data_piped"])
 
-                    if not status and task.get("force"):
+                    if response["return_code"] and task.get("force"):  # TODO: check
                         self.break_ = True
-                        return data_piped
+                        return response
 
-                return data_piped
+                return response
 
         def _execute_task(task, data, data_piped):
             def _execute(task, data, data_piped, module, logger):
@@ -207,8 +217,8 @@ class Puzzle(object):
                               data_piped=data_piped,
                               logger=logger)
 
-                status, data_piped = task.execute()
-                return status, data_piped
+                response = task.execute()  # {"return_code": A, "data_piped": B}
+                return response
 
             module_path = task["module"]
             try:
@@ -216,27 +226,25 @@ class Puzzle(object):
                 module_ = importlib.import_module(module_path)
                 reload(module_)
                 if hasattr(module_, "PIECE_NAME"):
-                    status, data_piped = _execute(task, data, data_piped, module_, self.logger)
+                    response = _execute(task, data, data_piped, module_, self.logger)
                 else:
-                    return -3, data_piped
+                    return {"return_code": 4, "data_piped": data_piped}
 
                 inp = datetime.datetime.now()
                 # if mod.skip:
-                #     return -1, data_piped, "skipped", detail
+                #     return 2, data_piped, "skipped", detail
 
                 self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
-                return status, data_piped
+                return response
 
             except BaseException:
                 self.logger.debug(traceback.format_exc())
-                self.logger.details.append({"details": traceback.format_exc(), 
-                                            "name": task.get("name"), 
-                                            "header": "task failed by error", 
-                                            "status": 0, 
+                self.logger.details.append({"details": traceback.format_exc(),
+                                            "name": task.get("name"),
+                                            "header": "task failed by error",
+                                            "return_code": 1,
                                             "comment": task.get("comment")})
-
-                return 0, data_piped
-
+                return {"return_code": 1, "data_piped": data_piped}
 
         """
         break when flg is not 1 and force in task settings
@@ -253,11 +261,12 @@ class Puzzle(object):
 
             data_set.setdefault(step, {})
             self.logger.debug("{}:".format(step))
+            response = {"return_code": 0, "data_piped": self.data_piped}
             self.data_piped = _execute_step(tasks=tasks[step],
                                             data=data_set[step],
                                             common=common,
                                             step=step,
-                                            data_piped=self.data_piped)
+                                            response=response)
 
         if "finally" in tasks:
             self.break_ = False
@@ -265,10 +274,11 @@ class Puzzle(object):
                                             data={},
                                             common=common,
                                             step="finally",
-                                            data_piped=self.data_piped)
+                                            response=response)
 
         self.logger.debug("takes: {}".format(datetime.datetime.now() - inp))
         self.close_event()
+
 
 def execute_command(app, **kwargs):
     def _get_script(script_):
