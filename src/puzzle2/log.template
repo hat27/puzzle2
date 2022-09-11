@@ -30,4 +30,4 @@ args=('$SAVEFILE', "D")
 
 [formatter_simple_formatter]
 format = %(asctime)-25s %(levelname)-10s %(module)-15s %(funcName)-25s line:%(lineno)-5s %(message)s
-date_format = %m-%d-%y %H:%M:%S
+datefmt = %m-%d-%y %H:%M:%S

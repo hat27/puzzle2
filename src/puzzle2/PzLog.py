@@ -21,9 +21,11 @@ from . import pz_env as pz_env
 SUCCESS = 100  # Custom
 RESULT = 101  # Custom
 ALERT = 102  # Custom
+FLAG = 103  # Custom
 logging.addLevelName(SUCCESS, 'SUCCESS')
 logging.addLevelName(RESULT, 'RESULT')
 logging.addLevelName(ALERT, 'ALERT')
+logging.addLevelName(FLAG, 'FLAG')
 
 
 class Details(list):
@@ -61,7 +63,7 @@ class PzLogger(logging.Logger):
         """
         self.ui = ui
 
-    def update_ui(self, msg, level_name, ui=None, skip_ui_update=False):
+    def update_ui(self, msg, level_name, ui=None, skip_ui_update=False, **kwargs):
         """
         Update the UI via view update function provided in the ui object,
         e.g., ui.success(), ui.result()
@@ -99,6 +101,12 @@ class PzLogger(logging.Logger):
         if self.isEnabledFor(ALERT):
             self._log(ALERT, msg, args, **kwargs)
             self.update_ui(msg, "alert", **kwargs)
+
+    def flag(self, msg, *args, **kwargs):
+        # CUSTOM OUTPUT
+        if self.isEnabledFor(FLAG):
+            self._log(FLAG, msg, args, **kwargs)
+            self.update_ui(msg, "flag", **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         if self.isEnabledFor(CRITICAL):
@@ -182,14 +190,9 @@ class PzLog(object):
             replace_text = {"$NAME": self.name}
             self.create_log_config_file(replace_text)
             print("log config path:", self.config_path)
-            update_config = {"loggers": {
-                "keys": "root, {}".format(self.name)
-            },
-                "handler_file_handler": {
-                # "args": "('{}', 'a')".format(self.log_path)  # FileHandler - Suggestion
-                "args": "('{}', 'D')".format(self.log_path)  # TimedRotatingFileHandler
-            }
-            }
+            update_config = {}
+            update_config["loggers"] = {"keys": "root, {}".format(self.name)}
+            update_config["handler_file_handler"] = {"args": "('{}', 'D')".format(self.log_path)}  # TimedRotatingFileHandler
 
             update_config.setdefault("handler_stream_handler", {})
             update_config.setdefault("logger_root", {})
@@ -214,6 +217,7 @@ class PzLog(object):
 
         self.logger.propagate = False
 
+    # TODO: Check - .templateファイル内の文字変数の置換はConfigParserのdefault機能で代替可能？
     def create_log_config_file(self, replace_log_config):
         """ Create a new log config file from the template file.
         For any changes, use replace_log_config (key: new_val)
@@ -252,7 +256,7 @@ class PzLog(object):
             for keys/vals in update_config dict.
         """
         if sys.version.startswith("2"):
-            ini = ConfigParser.ConfigParser()
+            ini = ConfigParser.RawConfigParser()  # Use RawConfigParser when accessing line with %(var)s
             ini.read(config_path)
 
             for k, v in update_config.items():
@@ -262,7 +266,7 @@ class PzLog(object):
                         if ini.get(k, k2):
                             ini.set(k, k2, v2)
         else:
-            ini = configparser.ConfigParser()
+            ini = configparser.RawConfigParser()
             ini.read(config_path, "utf-8")
 
             for k, v in update_config.items():
