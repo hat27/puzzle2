@@ -15,13 +15,13 @@
 PIECE_NAME = "ChangeFrame"
 
 
-def execute(task={}, data={}, data_globals={}, logger=None, **kwargs):
+def execute(task={}, data={}, data_global={}, logger=None, **kwargs):
 
     if logger:
         logger.info("frame is: {}".format(data["frame"]))
 
     frame = data["frame"] + 100
-    data_globals["frame"] = frame
+    data_global["frame"] = frame
 
     if logger:
         logger.info("set frame to: {}".format(frame))
@@ -38,9 +38,9 @@ def execute(task={}, data={}, data_globals={}, logger=None, **kwargs):
     # logger.success(ui, "FINISHED!")
     # logger.updateUI(ui, "Updated!", level="RESULT")
 
-    data_globals["TEST"] = 14253647
+    data_global["TEST"] = 14253647
     status = 1
-    return {"status_code": status, "data_globals": data_globals}
+    return {"status_code": status, "data_global": data_global}
 
 
 if __name__ == "__main__":
@@ -51,6 +51,6 @@ if __name__ == "__main__":
     data = {"frame": 156789}
 
     # from previus task
-    data_globals = {"frame": 10}
+    data_global = {"frame": 10}
 
-    execute(task, data, data_globals, logger=None)
+    execute(task, data, data_global, logger=None)

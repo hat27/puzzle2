@@ -45,7 +45,7 @@ class Puzzle(object):
         """
         self.file_mode = file_mode
         self.break_ = False
-        self.data_globals = {}
+        self.data_global = {}
         if self.file_mode:
             log_directory = os.environ.get("PUZZLE_LOGGER_DIRECTORY", pz_env.get_log_directory())
             self.name = os.environ.get("PUZZLE_LOGGER_NAME", name)
@@ -106,15 +106,15 @@ class Puzzle(object):
         pz_info, pz_data = pz_config.read(pz_path)
 
         if pipe_path != "":
-            pass_info, data_globals = pz_config.read(pipe_path)
+            pass_info, data_global = pz_config.read(pipe_path)
         else:
-            data_globals = None
+            data_global = None
         keys = [l.strip() for l in keys.split(";") if l != ""]
         messages = []
         for key in keys:
             message = self.play(pz_data[key],
                                 data,
-                                data_globals)
+                                data_global)
 
             messages.extend(message)
 
@@ -204,8 +204,7 @@ class Puzzle(object):
 
                     response = _execute_task(task=task,
                                              data=data,
-                                             data_globals=response["data_globals"])
-
+                                             data_global=response["data_global"])
 
                     # default, do not stop when script had error.
                     # if we want to stop tasks, set force key to setting.
@@ -218,20 +217,20 @@ class Puzzle(object):
                 self.logger.debug("{} takes: {}\n".format(step, datetime.datetime.now() - now))
                 return response
 
-        def _execute_task(task, data, data_globals):
-            def _execute(task, data, data_globals, module, logger):
+        def _execute_task(task, data, data_global):
+            def _execute(task, data, data_global, module, logger):
                 task = PzTask(module=module,
                               task=task,
                               data=data,
-                              data_globals=data_globals,
+                              data_global=data_global,
                               logger=logger)
 
-                response = task.execute()  # {"return_code": A, "data_globals": B}
+                response = task.execute()  # {"return_code": A, "data_global": B}
                 return response
 
             module_path = task["module"]
             task.setdefault("name", module_path.split(".")[-1])
-            
+
             # initialize details log
             self.logger.details.set_name(task["name"])
             self.logger.details.set_header(0, "successed: {}".format(task["name"]))
@@ -242,18 +241,18 @@ class Puzzle(object):
                 self.logger.info(module_path)
                 module_ = importlib.import_module(module_path)
                 reload(module_)
-            
+
             except BaseException:
                 error = traceback.format_exc()
                 self.logger.warning(error)
                 self.logger.details.add_detail(error)
                 self.logger.details.set_header(4, "import error: {}.py".format(module_path.split(".")[-1]))
-                return {"return_code": 4, "data_globals": data_globals}
+                return {"return_code": 4, "data_global": data_global}
 
             inp = datetime.datetime.now()
 
             try:
-                response = _execute(task, data, data_globals, module_, self.logger)
+                response = _execute(task, data, data_global, module_, self.logger)
 
             except BaseException:
                 error = traceback.format_exc()
@@ -261,11 +260,10 @@ class Puzzle(object):
                 self.logger.details.add_detail(error)
                 self.logger.details.set_header(4, "execute error: {}.py".format(module_path.split(".")[-1]))
 
-                return {"return_code": 4, "data_globals": data_globals}
+                return {"return_code": 4, "data_global": data_global}
 
             self.logger.debug("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
             return response
-
 
         """
         break when flg is not 1 and force in task settings
@@ -284,22 +282,21 @@ class Puzzle(object):
                 break
 
             data_set.setdefault(step, {})
-            self.logger.debug("{}: {}".format(step, "+"*30))
-            response = {"return_code": 0, "data_globals": self.data_globals}
-            self.data_globals = _execute_step(tasks=tasks[step],
-                                              data=data_set[step],
-                                              common=common,
-                                              step=step,
-                                              response=response)
-
+            self.logger.debug("{}: {}".format(step, "+" * 30))
+            response = {"return_code": 0, "data_global": self.data_global}
+            self.data_global = _execute_step(tasks=tasks[step],
+                                             data=data_set[step],
+                                             common=common,
+                                             step=step,
+                                             response=response)
 
         if "closure" in tasks:
             self.break_ = False
-            self.data_globals = _execute_step(tasks=tasks["closure"],
-                                              data={},
-                                              common=common,
-                                              step="closure",
-                                              response=response)
+            self.data_global = _execute_step(tasks=tasks["closure"],
+                                             data={},
+                                             common=common,
+                                             step="closure",
+                                             response=response)
 
         self.logger.debug("takes: {}".format(datetime.datetime.now() - inp))
         self.close_event()
