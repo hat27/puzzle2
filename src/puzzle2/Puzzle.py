@@ -45,7 +45,7 @@ class Puzzle(object):
         """
         self.file_mode = file_mode
         self.break_ = False
-        self.data_piped = {}
+        self.data_globals = {}
         if self.file_mode:
             log_directory = os.environ.get("PUZZLE_LOGGER_DIRECTORY", pz_env.get_log_directory())
             self.name = os.environ.get("PUZZLE_LOGGER_NAME", name)
@@ -64,6 +64,7 @@ class Puzzle(object):
                                    **kwargs)
 
             self.logger = self.Log.logger
+            self.logger.uuid = 1000
         else:
             self.logger = kwargs["logger"]
 
@@ -105,15 +106,15 @@ class Puzzle(object):
         pz_info, pz_data = pz_config.read(pz_path)
 
         if pipe_path != "":
-            pass_info, data_piped = pz_config.read(pipe_path)
+            pass_info, data_globals = pz_config.read(pipe_path)
         else:
-            data_piped = None
+            data_globals = None
         keys = [l.strip() for l in keys.split(";") if l != ""]
         messages = []
         for key in keys:
             message = self.play(pz_data[key],
                                 data,
-                                data_piped)
+                                data_globals)
 
             messages.extend(message)
 
@@ -162,7 +163,7 @@ class Puzzle(object):
          1: Error
          2: Skipped
          3: Task stopped
-         4: PIECE_NAME not found
+         4: module import error/ traceback error
         """
         def _execute_step(tasks, data, common, step, response):
             """
@@ -176,6 +177,7 @@ class Puzzle(object):
                 for i, d in enumerate(data):
                     if self.break_:
                         response["return_code"] = 3
+                        self.logger.debug("break: {}".format(step))
                         return response
 
                     response = _execute_step(tasks=tasks,
@@ -193,58 +195,77 @@ class Puzzle(object):
                 temp_common = copy.deepcopy(common)
                 temp_common.update(data)
                 data = temp_common
+                now = datetime.datetime.now()
+
                 for task in tasks:
                     if self.break_:
+                        self.logger.debug("break: {}".format(task.get("name")))
                         return response
 
                     response = _execute_task(task=task,
                                              data=data,
-                                             data_piped=response["data_piped"])
+                                             data_globals=response["data_globals"])
 
-                    if response["return_code"] and task.get("force"):  # TODO: check
+
+                    # default, do not stop when script had error.
+                    # if we want to stop tasks, set force key to setting.
+                    force = task.get("force", False)
+                    if response["return_code"] > 0 and force:
                         self.break_ = True
+                        self.logger.debug("{} takes: {}\n".format(step, datetime.datetime.now() - now))
                         return response
 
+                self.logger.debug("{} takes: {}\n".format(step, datetime.datetime.now() - now))
                 return response
 
-        def _execute_task(task, data, data_piped):
-            def _execute(task, data, data_piped, module, logger):
-                if not logger:
-                    logger = self.logger
+        def _execute_task(task, data, data_globals):
+            def _execute(task, data, data_globals, module, logger):
                 task = PzTask(module=module,
                               task=task,
                               data=data,
-                              data_piped=data_piped,
+                              data_globals=data_globals,
                               logger=logger)
 
-                response = task.execute()  # {"return_code": A, "data_piped": B}
+                response = task.execute()  # {"return_code": A, "data_globals": B}
                 return response
 
             module_path = task["module"]
+            task.setdefault("name", module_path.split(".")[-1])
+            
+            # initialize details log
+            self.logger.details.set_name(task["name"])
+            self.logger.details.set_header(0, "successed: {}".format(task["name"]))
+            if "comment" in task and task["comment"] != "":
+                self.logger.details.add_detail(task["comment"])
+
             try:
-                self.logger.debug(module_path)
+                self.logger.info(module_path)
                 module_ = importlib.import_module(module_path)
                 reload(module_)
-                if hasattr(module_, "PIECE_NAME"):
-                    response = _execute(task, data, data_piped, module_, self.logger)
-                else:
-                    return {"return_code": 4, "data_piped": data_piped}
+            
+            except BaseException:
+                error = traceback.format_exc()
+                self.logger.warning(error)
+                self.logger.details.add_detail(error)
+                self.logger.details.set_header(4, "import error: {}.py".format(module_path.split(".")[-1]))
+                return {"return_code": 4, "data_globals": data_globals}
 
-                inp = datetime.datetime.now()
-                # if mod.skip:
-                #     return 2, data_piped, "skipped", detail
+            inp = datetime.datetime.now()
 
-                self.logger.debug("{}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
-                return response
+            try:
+                response = _execute(task, data, data_globals, module_, self.logger)
 
             except BaseException:
-                self.logger.debug(traceback.format_exc())
-                self.logger.details.append({"details": traceback.format_exc(),
-                                            "name": task.get("name"),
-                                            "header": "task failed by error",
-                                            "return_code": 1,
-                                            "comment": task.get("comment")})
-                return {"return_code": 1, "data_piped": data_piped}
+                error = traceback.format_exc()
+                self.logger.warning(error)
+                self.logger.details.add_detail(error)
+                self.logger.details.set_header(4, "execute error: {}.py".format(module_path.split(".")[-1]))
+
+                return {"return_code": 4, "data_globals": data_globals}
+
+            self.logger.debug("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
+            return response
+
 
         """
         break when flg is not 1 and force in task settings
@@ -256,25 +277,29 @@ class Puzzle(object):
         common = data_set.get("common", {})
         for step in self.order:
             if step not in tasks:
-                self.logger.debug("")
                 continue
 
-            data_set.setdefault(step, {})
-            self.logger.debug("{}:".format(step))
-            response = {"return_code": 0, "data_piped": self.data_piped}
-            self.data_piped = _execute_step(tasks=tasks[step],
-                                            data=data_set[step],
-                                            common=common,
-                                            step=step,
-                                            response=response)
+            if self.break_:
+                self.logger.debug("break: {}".format(step))
+                break
 
-        if "finally" in tasks:
+            data_set.setdefault(step, {})
+            self.logger.debug("{}: {}".format(step, "+"*30))
+            response = {"return_code": 0, "data_globals": self.data_globals}
+            self.data_globals = _execute_step(tasks=tasks[step],
+                                              data=data_set[step],
+                                              common=common,
+                                              step=step,
+                                              response=response)
+
+
+        if "closure" in tasks:
             self.break_ = False
-            self.data_piped = _execute_step(tasks=tasks["finally"],
-                                            data={},
-                                            common=common,
-                                            step="finally",
-                                            response=response)
+            self.data_globals = _execute_step(tasks=tasks["closure"],
+                                              data={},
+                                              common=common,
+                                              step="closure",
+                                              response=response)
 
         self.logger.debug("takes: {}".format(datetime.datetime.now() - inp))
         self.close_event()

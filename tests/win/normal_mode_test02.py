@@ -1,6 +1,7 @@
 #-*- coding: utf8 -*-
 
 import os
+from re import L
 import sys
 
 
@@ -13,28 +14,46 @@ sys.dont_write_bytecode = True
 from puzzle2.Puzzle import Puzzle, execute_command
 
 tasks = {
-            "main": 
+            "pre": 
                       [{
                        "name": "reference chara",
                        "description": "reference chara assets",
-                       "module": "tests.data.pieces.win.change_frame",
+                       "module": "tests.data.tasks.win.change_frame",
+                       "force": True,
                        "inputs": {
                         "frame": "TEST"
                         }
                        },
                        {
-                       "name": "reference chara",
+                       "name": "reference chara02",
                        "description": "reference chara assets",
-                       "module": "tests.data.pieces.win.change_frame",
+                       "module": "tests.data.tasks.win.change_frame",
                        "inputs": {
-                                "frame": "@TEST"
+                                "frame": "globals.TEST"
+                                }
+                       }
+                      ],
+            "main": 
+                      [{
+                       "name": "reference chara03",
+                       "description": "reference chara assets",
+                       "module": "tests.data.tasks.win.change_frame",
+                       "conditions": [{"category": "ch"}]
+                       },
+                       {
+                       "name": "reference chara04",
+                       "description": "reference chara assets",
+                       "module": "tests.data.tasks.win.change_frame",
+                       "inputs": {
+                                "frame": "globals.TEST"
                                 }
                        }
                       ]
+
         }
 
 data = {
-        "main": [
+        "pre": 
                  {
                   "asset_type": "chara",
                   "namespace": "A",
@@ -43,13 +62,27 @@ data = {
                   "TEST": 1550, 
                   "fbx_path":  "D:/project/c001_A.fbx"
                  }
-                ]
+                ,
+        "main": [
+                 {
+                  "asset_type": "chara",
+                  "namespace": "A",
+                  "asset_path": "D:/project/A.ma",
+                  "frame": 100,
+                  "TEST": 1550, 
+                  "fbx_path":  "D:/project/c001_A.fbx",
+                  "category": "chs"
+                 }
+                ]                
        }
 
 
 os.environ["__PUZZLE_PATH__"] = module_path
 x = Puzzle("sample", new=True, update_log_config=True)
 results = x.play(tasks, data)
-print(x.logger.details.get_header())
-print(x.logger.details.get_details())
-print(x.logger.details.get_all())
+import pprint
+print("header:")
+pprint.pprint(x.logger.details.get_header())
+
+print("all:")
+pprint.pprint(x.logger.details.get_all())
