@@ -11,6 +11,7 @@ class PzTask(object):
         self.data = copy.deepcopy(args.get("data", {}))
         self.data_piped = args.get("data_piped", {})
 
+        self.context = args.get("context", {})
         self.logger = args.get("logger", False)
         self.module = args.get("module", False)
         self.return_code = 0
@@ -29,6 +30,9 @@ class PzTask(object):
         if not self.logger:
             log = PzLog.PzLog()
             self.logger = log.logger
+
+        if "logger" in self.context:
+            self.context["logger"] = self.logger
 
         if "inputs" in self.task:
             """
@@ -89,6 +93,10 @@ class PzTask(object):
             response = {"return_code": 2, "data_piped": data_piped}
         else:
             event = {"task": self.task, "data": self.data, "data_piped": data_piped}
-            context = {"logger": self.logger}
-            response = self.module.execute(event, context)
+
+            # RUN module.main() or module.execute(), whichever is available.
+            if hasattr(self.module, "main"):  # Module has main() function as expected
+                response = self.module.main(event, self.context)
+            elif hasattr(self.module, "execute"):  # OR has execute() function instead
+                response = self.module.execute(event, self.context)
         return response

@@ -56,7 +56,7 @@ class Puzzle(object):
         if "log_directory" in kwargs:
             del kwargs["log_directory"]
 
-        self.order = kwargs.get("order", ["primary", "main", "post"])
+        self.order = kwargs.get("order", ["pre", "main", "post"])
 
         if not kwargs.get("logger", False):
             self.Log = PzLog.PzLog(name=self.name,
@@ -234,7 +234,7 @@ class Puzzle(object):
                 # if mod.skip:
                 #     return 2, data_piped, "skipped", detail
 
-                self.logger.debug("{}\n".format(datetime.datetime.now() - inp))
+                self.logger.debug("{}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
                 return response
 
             except BaseException:
