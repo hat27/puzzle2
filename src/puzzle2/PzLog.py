@@ -2,6 +2,7 @@
 
 import os
 import sys
+import copy
 
 if sys.version.startswith("2"):
     import ConfigParser
@@ -28,17 +29,55 @@ logging.addLevelName(ALERT, 'ALERT')
 logging.addLevelName(FLAG, 'FLAG')
 
 
-class Details(list):
+class Details(object):
+    def __init__(self):
+        self._header = {}
+        self._details = {}
+        self.order = []
+
+    def set_name(self, name):
+        self.name = name
+        self.order.append(name)
+    
+    def add_detail(self, text):
+        self._details.setdefault(self.name, []).append(text)
+    
+    def set_header(self, return_code, text):
+        self._header[self.name] = {"return_code": return_code, 
+                                   "text": text}
+
     def get_header(self):
-        return [l["header"] for l in self]
+        return [self._header[name] for name in self.order]
 
     def get_details(self, key=None):
         if key:
-            return [l["details"] for l in self if l["name"] == key if "details" in l]
-        return [l["details"] for l in self if "details" in l]
+            return self._details[key]
+        else:
+            details = []
+            for name in self.order:
+                details.append(self._details[name])
+
+        return details
 
     def get_all(self):
-        return self
+        all_ = []
+        for name in self.order:
+            data = {}
+            if name in self._header:
+                data = copy.deepcopy(self._header[name])
+
+            if name in self._details:
+                data["details"] = self._details[name]
+
+            all_.append(data)
+        
+        return all_
+    
+    def clear(self):
+        self._header = {}
+        self._details = {}
+        self.order = []
+        self.name = ""
 
 # TODO: 将来的にPzLoggerとPzLogを統合する事を検討
 
@@ -189,7 +228,7 @@ class PzLog(object):
             # Create a new config file from the template config file
             replace_text = {"$NAME": self.name}
             self.create_log_config_file(replace_text)
-            print("log config path:", self.config_path)
+            # print("log config path:", self.config_path)
             update_config = {}
             update_config["loggers"] = {"keys": "root, {}".format(self.name)}
             update_config["handler_file_handler"] = {"args": "('{}', 'D')".format(self.log_path)}  # TimedRotatingFileHandler
@@ -275,6 +314,6 @@ class PzLog(object):
                         if k2 in ini[k]:
                             ini[k][k2] = v2
 
-        print(config_path)
+        # print(config_path)
         with open(config_path, "w") as f:
             ini.write(f)
