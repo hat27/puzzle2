@@ -11,7 +11,7 @@ sys.path.append(module_path)
 LOGGER_LEVEL = "critical"
 
 class PuzzleTestAndTutorial(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True)
 
     def test_simple(self):
