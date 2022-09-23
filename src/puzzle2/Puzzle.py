@@ -164,28 +164,31 @@ class Puzzle(object):
          2: Skipped
          3: Task stopped
          4: module import error/ traceback error
+         5: require key is not exists
         """
         def _execute_step(tasks, data, common, step, response):
             """
             when data is list, same tasks run for each.
+
+            response: {return_code: int, data_globals: dict}
+
+            return: {return_code: int, data_globals: dict}
             """
             if isinstance(data, list):
                 flg = True
                 if len(data) == 0 and len(common) > 0:
                     data = [common]
-
                 for i, d in enumerate(data):
                     if self.break_:
                         response["return_code"] = 3
                         self.logger.debug("break: {}".format(step))
                         return response
-
+                    
                     response = _execute_step(tasks=tasks,
                                              data=d,
                                              common=common,
                                              step=step,
                                              response=response)
-
                 return response
             else:
                 """
@@ -195,8 +198,6 @@ class Puzzle(object):
                 temp_common = copy.deepcopy(common)
                 temp_common.update(data)
                 data = temp_common
-                now = datetime.datetime.now()
-
                 for task in tasks:
                     if self.break_:
                         self.logger.debug("break: {}".format(task.get("name")))
@@ -204,18 +205,16 @@ class Puzzle(object):
 
                     response = _execute_task(task=task,
                                              data=data,
-                                             data_globals=response["data_globals"])
-
+                                             data_globals=response.get("data_globals", {}))
 
                     # default, do not stop when script had error.
-                    # if we want to stop tasks, set force key to setting.
+                    # if we want to stop tasks, set force key to task setting.
                     force = task.get("force", False)
-                    if response["return_code"] > 0 and force:
+                    if response.get("return_code", 0) > 0 and force:
                         self.break_ = True
-                        self.logger.debug("{} takes: {}\n".format(step, datetime.datetime.now() - now))
-                        return response
+                        self.logger.debug("set break: True")
+                        break
 
-                self.logger.debug("{} takes: {}\n".format(step, datetime.datetime.now() - now))
                 return response
 
         def _execute_task(task, data, data_globals):
@@ -231,15 +230,15 @@ class Puzzle(object):
 
             module_path = task["module"]
             task.setdefault("name", module_path.split(".")[-1])
-            
+
             # initialize details log
             self.logger.details.set_name(task["name"])
             self.logger.details.set_header(0, "successed: {}".format(task["name"]))
             if "comment" in task and task["comment"] != "":
                 self.logger.details.add_detail(task["comment"])
 
+            self.logger.info("module: {}".format(module_path))
             try:
-                self.logger.info(module_path)
                 module_ = importlib.import_module(module_path)
                 reload(module_)
             
@@ -260,21 +259,59 @@ class Puzzle(object):
                 self.logger.warning(error)
                 self.logger.details.add_detail(error)
                 self.logger.details.set_header(4, "execute error: {}.py".format(module_path.split(".")[-1]))
-
                 return {"return_code": 4, "data_globals": data_globals}
 
-            self.logger.debug("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
+            self.logger.info("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
+            if response is None:
+                response = {"return_code": 0, "data_globals": data_globals}
+
+            self.logger.details.update_code(response["return_code"])
             return response
 
-
-        """
-        break when flg is not 1 and force in task settings
-        """
+        # initialize
         self.logger.details.clear()
+        self.data_globals = {}
         self.break_ = False
+
         inp = datetime.datetime.now()
-        self.logger.debug("start\n")
+        self.logger.info("- tasks start: {} -\n".format(", ".join(self.order)))
         common = data_set.get("common", {})
+
+        if "init" in tasks:
+            """
+            this special step can override data inside process
+            if you want to grab some thing from scene, you can use this.
+            maybe this step will start from "open_file" task 
+            then "grab_something_from_scene" task for override data.
+            different from data_globals is this step can override loop data 
+            and it is not possible from using default data_globals flow.
+
+            WARNING:
+                step data is list type.it will be replace for now.
+                if you want to set specific key, use common key to make it happen. 
+                
+            """
+            now = datetime.datetime.now()
+            self.logger.debug("- init start -")
+
+            response = {"return_code": 0, "data_globals": {}}
+            init_data = _execute_step(tasks=tasks["init"],
+                                      data=data_set.get("init", {}),
+                                      common=common,
+                                      step="init",
+                                      response=response)
+            remove_key = []
+            for key, value in init_data.get("data_globals", {}).items():
+                if key in data_set:
+                    if isinstance(data_set[key], list):
+                        data_set[key] = value
+                    else:
+                        data_set[key].update(value)
+                else:
+                    data_set[key] = value
+            
+            self.logger.info("- init takes: {} -\n\n".format(datetime.datetime.now() - now))
+
         for step in self.order:
             if step not in tasks:
                 continue
@@ -283,25 +320,34 @@ class Puzzle(object):
                 self.logger.debug("break: {}".format(step))
                 break
 
+            now = datetime.datetime.now()
             data_set.setdefault(step, {})
-            self.logger.debug("{}: {}".format(step, "+"*30))
+            self.logger.debug("- {} start -".format(step))
             response = {"return_code": 0, "data_globals": self.data_globals}
-            self.data_globals = _execute_step(tasks=tasks[step],
-                                              data=data_set[step],
-                                              common=common,
-                                              step=step,
-                                              response=response)
 
+            response = _execute_step(tasks=tasks[step],
+                                     data=data_set[step],
+                                     common=common,
+                                     step=step,
+                                     response=response)
+            
+            self.data_globals = response["data_globals"]
+            self.logger.info("- {} takes: {} -\n\n".format(step, datetime.datetime.now() - now))
 
         if "closure" in tasks:
             self.break_ = False
-            self.data_globals = _execute_step(tasks=tasks["closure"],
-                                              data={},
-                                              common=common,
-                                              step="closure",
-                                              response=response)
+            self.logger.debug("- closure start -")
+            now = datetime.datetime.now()
+            response = _execute_step(tasks=tasks["closure"],
+                                     data=data_set.get("closure", {}),
+                                     common=common,
+                                     step="closure",
+                                     response=response)
+            
+            self.data_globals = response["data_globals"]
+            self.logger.info("-closure takes: {}-\n\n".format(datetime.datetime.now() - now))
 
-        self.logger.debug("takes: {}".format(datetime.datetime.now() - inp))
+        self.logger.info("- done: {} -".format(datetime.datetime.now() - inp))
         self.close_event()
 
 

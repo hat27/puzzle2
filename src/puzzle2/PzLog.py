@@ -34,20 +34,34 @@ class Details(object):
         self._header = {}
         self._details = {}
         self.order = []
+        self.index = 0
+        self.name = ""
 
     def set_name(self, name):
-        self.name = name
-        self.order.append(name)
+        self.name = "{} {}".format(self.index, name)
+        self.order.append(self.name)
+
+        self.index += 1
     
     def add_detail(self, text):
         self._details.setdefault(self.name, []).append(text)
     
     def set_header(self, return_code, text):
         self._header[self.name] = {"return_code": return_code, 
-                                   "text": text}
+                                   "header": text}
+
+    def update_code(self, return_code):
+        self._header[self.name]["return_code"] = return_code
 
     def get_header(self):
-        return [self._header[name] for name in self.order]
+        return [self._header.get(name, name) for name in self.order]
+
+    def get_return_codes(self):
+        codes = []
+        for name in self.order:
+            codes.append(self._header[name]["return_code"])
+
+        return codes
 
     def get_details(self, key=None):
         if key:
@@ -219,7 +233,7 @@ class PzLog(object):
             if os.path.exists(self.config_path):
                 try:
                     os.remove(self.config_path)
-                    print("removed: {}".format(self.config_path))
+                    # print("removed: {}".format(self.config_path))
                     self.removed = True
                 except BaseException:
                     pass
@@ -249,7 +263,7 @@ class PzLog(object):
 
             self.update_config_file(self.config_path, update_config)
 
-        print("config file:", self.config_path)
+        # print("config file:", self.config_path)
         logging.config.fileConfig(self.config_path)
         self.logger = getLogger(self.name)
         # self.logger = PzLogger(self.name)
@@ -283,7 +297,7 @@ class PzLog(object):
         previous_logger = getLogger(self.name)
         for handler in previous_logger.handlers[::-1]:
             if hasattr(handler, "close"):
-                print("close: {}".format(handler))
+                # print("close: {}".format(handler))
                 handler.close()
             try:
                 self.logger.removeHandler(handler)
@@ -299,7 +313,6 @@ class PzLog(object):
             ini.read(config_path)
 
             for k, v in update_config.items():
-                print(k, v)
                 if k in ini.sections():
                     for k2, v2 in v.items():
                         if ini.get(k, k2):

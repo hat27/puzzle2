@@ -16,6 +16,7 @@ class PzTask(object):
         self.context = args.get("context", {})
         self.logger = args.get("logger", False)
         self.module = args.get("module", False)
+
         self.return_code = 0
         """
          --------------------
@@ -26,6 +27,7 @@ class PzTask(object):
          2: Skipped
          3: Task stopped
          4: module import error
+         5: require key is not exists
         """
         self.task.setdefault("name", "untitled")
         self.name = self.task["name"]
@@ -36,16 +38,16 @@ class PzTask(object):
 
         self.context.setdefault("logger", self.logger)
 
-        #if "logger" in self.context:
+        # if "logger" in self.context:
         #    self.context["logger"] = self.logger
         # print(self.logger.handlers)
 
-        if "inputs" in self.task:
+        if "data_inputs" in self.task:
             """
-            if startswith "data." or no prefix search from data, 
+            if startswith "data." or no prefix search from data,
             else startswith "globals." seach from data_globals
             """
-            for k, v in self.task["inputs"].items():
+            for k, v in self.task["data_inputs"].items():
                 if v.startswith("globals."):
                     name = v.replace("globals.", "")
                     if name in self.data_globals:
@@ -56,25 +58,32 @@ class PzTask(object):
                         self.data[k] = self.data[v]
                         del self.data[v]
 
-        self.header = self.task.get("name", "")
-        self.details = []
-        comment = self.task.get("comment", "")
-        if comment != u"":
-            self.details = [u"【{}】\n{}\n".format(comment, self.task["module"])]
-
+        self.header = self.task["name"]
         self.skip = False
         if "conditions" in self.task:
             for condition in self.task["conditions"]:
                 for k, v in condition.items():
                     if k not in self.data:
                         self.skip = True
+                        self.return_code = 2
                         break
                     if isinstance(v, list):
                         if not self.data[k] in v:
                             self.skip = True
+                            self.return_code = 2
                     else:
                         if v != self.data[k]:
                             self.skip = True
+                            self.return_code = 2
+        
+        if hasattr(self.module, "DATA_KEY_REQUIRED") and not self.skip:
+            data_key_required = list(set(self.module.DATA_KEY_REQUIRED) - set(self.data.keys()))
+            if len(data_key_required) > 0:
+                data_key_required_text = ", ".join(data_key_required)
+                self.logger.critical("required key is not exists in 'data': {}".format(data_key_required_text))
+                self.logger.details.add_detail("required key is not exists in 'data': {}".format(data_key_required_text))
+                self.skip = True
+                self.return_code = 5
 
     def execute(self, data_globals={}):
         """
@@ -86,6 +95,7 @@ class PzTask(object):
          2: Skipped
          3: Task stopped
          4: module import error
+         5: require key is not exists
         """
 
         # Use self.data_globals by default.
@@ -95,17 +105,15 @@ class PzTask(object):
         response = {}
         if self.skip:
             self.logger.debug("task skipped")
-            self.logger.details.set_header(2, "skipped: {}".format(self.name))
-
-            response = {"return_code": 2, "data_globals": data_globals}
+            self.logger.details.set_header(self.return_code, "skipped: {}".format(self.name))
+            response = {"return_code": self.return_code, "data_globals": data_globals}
         else:
             event = {"task": self.task, "data": self.data, "data_globals": data_globals}
 
             # set default header
             self.context = {"logger": self.logger}
             response = self.module.main(event, self.context)
-
             if response is None:
-                response = {"status_code": 0, "data_globals": data_globals}
+                response = {"return_code": self.return_code, "data_globals": data_globals}
 
         return response
