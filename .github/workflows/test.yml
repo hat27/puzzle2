@@ -1,4 +1,4 @@
-name: mayaExampleCI
+name: mayaCI
 
 on:
   push:

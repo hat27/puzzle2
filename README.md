@@ -1,4 +1,4 @@
-![Tests](https://github.com/hat27/puzzle2/actions/workflows/tests.yml/badge.svg)
+![Tests](https://github.com/hat27/puzzle2/actions/workflows/test.yml/badge.svg)
 
 HOWTO
 

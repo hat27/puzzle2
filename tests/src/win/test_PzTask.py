@@ -1,7 +1,7 @@
 import unittest
 import os
 import sys
-print(sys.path)
+
 from puzzle2.PzTask import PzTask
 
 module_path = os.path.normpath(os.path.join(__file__, "../../../"))
