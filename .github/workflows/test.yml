@@ -15,8 +15,7 @@ jobs:
       - name: Run Unittests
         uses: docker://mottosso/maya:2019
         env:
-          PUZZLE_REPO_PATH: /github/workspace/src
-          PUZZLE_TASK_PATH: /github/workspace/tests/tasks
+          PYTOHNPATH: /github/workspace/src;/github/workspace/tests
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
@@ -30,8 +29,7 @@ jobs:
       - name: Run Unittests
         uses: docker://mottosso/maya:2020
         env:
-          PUZZLE_REPO_PATH: /github/workspace/src
-          PUZZLE_TASK_PATH: /github/workspace/tests/tasks
+          PYTOHNPATH: /github/workspace/src;/github/workspace/tests
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
@@ -45,8 +43,7 @@ jobs:
       - name: Run Unittests
         uses: docker://mottosso/maya:2022
         env:
-          PUZZLE_REPO_PATH: /github/workspace/src
-          PUZZLE_TASK_PATH: /github/workspace/tests/tasks
+          PYTOHNPATH: /github/workspace/src;/github/workspace/tests
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
