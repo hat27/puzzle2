@@ -197,7 +197,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
 
 class PuzzleTest(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True)
 
     def test_skip_flow(self):

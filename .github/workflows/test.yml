@@ -11,11 +11,15 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+      
+      - name: set env
+        run: |
+          echo "PYTHONPATH=/github/workspace/src;/github/workspace/tests" >> $GITHUB_ENV
 
       - name: Run Unittests
         uses: docker://mottosso/maya:2019
         env:
-          PYTHONPATH: /github/workspace/src;/github/workspace/tests
+          
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
@@ -26,10 +30,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: set env
+        run: |
+          echo "PYTHONPATH=/github/workspace/src;/github/workspace/tests" >> $GITHUB_ENV
+
       - name: Run Unittests
         uses: docker://mottosso/maya:2020
         env:
-          PYTHONPATH: /github/workspace/src;/github/workspace/tests
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
@@ -40,10 +47,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: set env
+        run: |
+          echo "PYTHONPATH=/github/workspace/src;/github/workspace/tests" >> $GITHUB_ENV
+
       - name: Run Unittests
         uses: docker://mottosso/maya:2022
         env:
-          PYTHONPATH: /github/workspace/src;/github/workspace/tests
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
