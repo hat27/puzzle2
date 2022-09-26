@@ -106,13 +106,13 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                  "main": [{"module": "tasks.win.export_file"}]}
 
         data = {"init": {"open_path": "somewhere"}} # data override from "get_from_scene"
-
+        # add 3 main data inside "init"
+        # task runs 2(init) + 3(main) times.runturn_code must be five 0
        
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
-       
-        self.assertEqual(set([0]), set(return_codes))        
+        self.assertEqual([0, 0, 0, 0, 0], return_codes)        
 
     def test_import_and_rename_and_export(self):
         """
