@@ -92,6 +92,7 @@ class Details(object):
         self._details = {}
         self.order = []
         self.name = ""
+        self.index = 0
 
 # TODO: 将来的にPzLoggerとPzLogを統合する事を検討
 
