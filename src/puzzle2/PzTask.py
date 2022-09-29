@@ -75,7 +75,7 @@ class PzTask(object):
                         if v != self.data[k]:
                             self.skip = True
                             self.return_code = 2
-        
+
         if hasattr(self.module, "DATA_KEY_REQUIRED") and not self.skip:
             data_key_required = list(set(self.module.DATA_KEY_REQUIRED) - set(self.data.keys()))
             if len(data_key_required) > 0:
@@ -111,7 +111,7 @@ class PzTask(object):
             event = {"task": self.task, "data": self.data, "data_globals": data_globals}
 
             # set default header
-            self.context = {"logger": self.logger}
+            # self.context = {"logger": self.logger}
             response = self.module.main(event, self.context)
             if response is None:
                 response = {"return_code": self.return_code, "data_globals": data_globals}
