@@ -210,7 +210,7 @@ class Puzzle(object):
                     # default, do not stop when script had error.
                     # if we want to stop tasks, set force key to task setting.
                     force = task.get("force", False)
-                    if response.get("return_code", 0) > 0 and force:
+                    if response.get("return_code", 0) not in [0, 2] and force:
                         self.break_ = True
                         self.logger.debug("set break: True")
                         break
@@ -266,6 +266,7 @@ class Puzzle(object):
                 response = {"return_code": 0, "data_globals": data_globals}
 
             self.logger.details.update_code(response["return_code"])
+
             return response
 
         # initialize
@@ -300,6 +301,7 @@ class Puzzle(object):
                                       common=common,
                                       step="init",
                                       response=response)
+
             remove_key = []
             for key, value in init_data.get("data_globals", {}).items():
                 if key in data_set:
