@@ -25,9 +25,9 @@ class PzTask(object):
          0: Success
          1: Error
          2: Skipped
-         3: Task stopped
-         4: module import error
-         5: require key is not exists
+         3: Break
+         4: Module import error
+         5: Required key does not exist
         """
         self.task.setdefault("name", "untitled")
         self.name = self.task["name"]

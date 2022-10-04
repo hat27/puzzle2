@@ -53,13 +53,13 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
     def test_task_failed_then_stopped(self):
         """
-        there are error and force key exists.
+        there are error and break_on_exceptions key exists.
         tasks stopped.
         """
         print("")
         print("test_task_failed_then_stopped")
 
-        tasks = {"pre": [{"module": "tasks.win.open_file", "force": True}],
+        tasks = {"pre": [{"module": "tasks.win.open_file", "break_on_exceptions": True}],
                  "main": [{"module": "tasks.win.export_file"}]}
         
         data = {"pre": {"path": "somewhere"}, 
@@ -72,7 +72,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
     def test_task_failed_stop_but_closure_is_executed(self):
         """
-        there are error and force key exists.
+        there are error and break_on_exceptions key exists.
         tasks stopped.
         but special step "closure" will executed.
         sometime, closere data will generate inside other tasks.
@@ -81,7 +81,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         print("")
         print("test_task_failed_stop_but_closure_is_executed")
 
-        tasks = {"pre": [{"module": "tasks.win.open_file", "force": True}],
+        tasks = {"pre": [{"module": "tasks.win.open_file", "break_on_exceptions": True}],
                  "main": [{"module": "tasks.win.export_file"}], 
                  "closure": [{"module": "tasks.win.revert"}]}
         
@@ -126,7 +126,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
         print("")
         print("test_import_and_rename_and_export")
-        tasks = {"pre": [{"module": "tasks.win.open_file", "force": True}],
+        tasks = {"pre": [{"module": "tasks.win.open_file", "break_on_exceptions": True}],
                  "main": [{"module": "tasks.win.import_file"}, 
                           {"module": "tasks.win.rename_namespace"}, 
                           {"module": "tasks.win.export_file", 
@@ -323,7 +323,7 @@ class PuzzleTest(unittest.TestCase):
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
-        self.assertEqual([2, 2, 4], return_codes)
+        self.assertEqual([2, 2, 4, 4], return_codes)
 
 if __name__ == "__main__":
     unittest.main()

@@ -162,9 +162,9 @@ class Puzzle(object):
          0: Success
          1: Error
          2: Skipped
-         3: Task stopped
-         4: module import error/ traceback error
-         5: require key is not exists
+         3: Break
+         4: Module import error/ traceback error
+         5: Required key does not exist
         """
         def _execute_step(tasks, data, common, step, response):
             """
@@ -207,10 +207,11 @@ class Puzzle(object):
                                              data=data,
                                              data_globals=response.get("data_globals", {}))
 
-                    # default, do not stop when script had error.
-                    # if we want to stop tasks, set force key to task setting.
-                    force = task.get("force", False)
-                    if response.get("return_code", 0) not in [0, 2] and force:
+                    # Rest of the pipeline tasks will be skipped when
+                    # 1. break_on_exceptions is set to TRUE
+                    # 2. Exceptions (return flags 1,3,4,5) are caught through return_code
+                    break_on_exceptions = task.get("break_on_exceptions", False)
+                    if response.get("return_code", 0) not in [0, 2] and break_on_exceptions:
                         self.break_ = True
                         self.logger.debug("set break: True")
                         break
