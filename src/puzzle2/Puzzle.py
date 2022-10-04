@@ -267,6 +267,7 @@ class Puzzle(object):
                 response = {"return_code": 0, "data_globals": data_globals}
 
             self.logger.details.update_code(response["return_code"])
+
             return response
 
         # initialize
@@ -301,6 +302,7 @@ class Puzzle(object):
                                       common=common,
                                       step="init",
                                       response=response)
+
             remove_key = []
             for key, value in init_data.get("data_globals", {}).items():
                 if key in data_set:
