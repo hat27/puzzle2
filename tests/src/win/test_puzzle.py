@@ -323,7 +323,7 @@ class PuzzleTest(unittest.TestCase):
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
-        self.assertEqual([2, 2, 4], return_codes)
+        self.assertEqual([2, 2, 4, 4], return_codes)
 
 if __name__ == "__main__":
     unittest.main()
