@@ -204,8 +204,8 @@ class PuzzleTest(unittest.TestCase):
         """
         if every thing skipped?
         what happend to data_globals?
-        set 'main' from get_from_scene.
-        it will pass through every task and 
+        set 'main' at get_from_scene.
+        it will pass through every task till last.
         """
         print("")
         print("test_skip_flow")
@@ -234,6 +234,96 @@ class PuzzleTest(unittest.TestCase):
         names = [l["name"] for l in self.puzzle.data_globals["main"]]
         self.assertEqual("a,b,c", ",".join(names))
 
+    def test_init_is_blank_then_break(self):
+        """
+        when init data is empty or not exactry what we want.
+        stop progress when force flag is True and set return code != [0, 2]
+        """
+        print("test_init_is_blank_then_break")
+        tasks = {"init": [{"module": "tasks.win.open_file"},              # 0
+                          {"module": "tasks.win.get_from_scene_empty",    # 1 
+                           "force": True}],
+                 "main": [{"module": "tasks.win.export_file"}]}           # this tasks were skipped
+
+        data = {"init": {"open_path": "somewhere"}}       
+        self.puzzle.play(tasks, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([0, 1], return_codes)
+
+    def test_init_is_nothing(self):
+        """
+        when init data is empty but task need to run.
+        do not set force flag True
+        """
+        print("test_init_is_nothing")
+        tasks = {"init": [{"module": "tasks.win.open_file"},             # 0
+                          {"module": "tasks.win.get_from_scene_empty"}], # 1
+                 "main": [{"module": "tasks.win.export_file"}],          # this tasks were skipped.
+                 "post": [{"module": "tasks.win.export_file"}]}          # 0
+
+        data = {"init": {"open_path": "somewhere"}, 
+                "post": {"name": "somewhere"}} # data override from "get_from_scene"
+       
+        self.puzzle.play(tasks, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([0, 1, 0], return_codes)
+
+    def test_conditions_skip_and_force_true(self):
+        """
+        task run when category is chara.
+        skip with condition is not error, so every task will run fine.
+        """
+        print("")
+        print("test_conditions_skip_and_force_true")
+        tasks = {
+                 "main": [
+                          {"module": "tasks.win.rename_namespace", 
+                           "conditions": [{"category": "chara"}],
+                           "force": True
+                           }
+                         ]
+                }
+
+        data = {"main": [{"category": "chara", "name": "charaA"}, # 0
+                         {"category": "chara", "name": "charaB"}, # 0
+                         {"categery": "bg", "name": "bgA"}, # 2 > skip
+                         {"categery": "bg", "name": "bgB"}] # 2 > skip
+               }
+       
+        self.puzzle.play(tasks, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([0, 0, 2, 2], return_codes)
+
+    def test_conditions_skip_and_force_true_and_error_occur(self):
+        """
+        task run when category is bg.but some error inside script.
+        then stop all because force key is True.
+        """
+        print("")
+        print("test_conditions_skip_and_force_true_and_error_occur")
+        tasks = {
+                 "main": [
+                          {"module": "tasks.win.rename_namespace_with_error", 
+                           "conditions": [{"categery": "bg"}],
+                           "force": True
+                           }
+                         ]
+                }
+
+        # tasks will stop at bg category because of script error
+        data = {"main": [{"category": "chara", "name": "charaA"}, # 2 skip task
+                         {"category": "chara", "name": "charaB"}, # 2 skip task
+                         {"categery": "bg", "name": "bgA"}, # 4 error
+                         {"categery": "bg", "name": "bgB"}]
+               }
+       
+        self.puzzle.play(tasks, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([2, 2, 4], return_codes)
 
 if __name__ == "__main__":
     unittest.main()
