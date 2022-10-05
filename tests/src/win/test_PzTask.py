@@ -39,9 +39,9 @@ class TaskFunctionTest(unittest.TestCase):
                     "name": "globals.new_name"
                }}
         
-        data_globals = {"new_name": "nameB"}
-        pz_task = PzTask(module=mock, task=task, data=data, data_globals=data_globals)
-        self.assertEqual(pz_task.data["name"], data_globals["new_name"])
+        context = {"_data": {"new_name": "nameB"}}
+        pz_task = PzTask(module=mock, task=task, data=data, context=context)
+        self.assertEqual(pz_task.data["name"], context["_data"]["new_name"])
 
     def test_conditions(self):
         data = {"name": "nameA", "category": "ch"}
