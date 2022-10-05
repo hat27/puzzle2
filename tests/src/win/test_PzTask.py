@@ -23,9 +23,9 @@ class TaskFunctionTest(unittest.TestCase):
         response = pz_task.execute()
         self.assertEqual(response["return_code"], 0)
 
-    def test_data_inputs(self):
+    def test_data_key_replace(self):
         data = {"new_name": "nameB"}
-        task = {"data_inputs": {
+        task = {"data_key_replace": {
                     "name": "new_name"
                }}
         
@@ -33,9 +33,9 @@ class TaskFunctionTest(unittest.TestCase):
 
         self.assertEqual(pz_task.data["name"], data["new_name"])
 
-    def test_data_inputs_from_other_task(self):
+    def test_data_key_replace_from_other_task(self):
         data = {"name": "nameA"}
-        task = {"data_inputs": {
+        task = {"data_key_replace": {
                     "name": "globals.new_name"
                }}
         
