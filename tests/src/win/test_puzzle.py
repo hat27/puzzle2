@@ -121,7 +121,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
     def test_update_data_and_use_it_in_other_task(self):
         """
         when we want to export different name from first.
-        set data_inputs key to task. then use key to at 'export_file'.
+        set data_key_replace key to task. then use key to at 'export_file'.
 
         IMPORTANT:
         if step is loop. context[_data] value will overrided.
@@ -137,7 +137,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                   "tasks": [{"module": "tasks.win.import_file"}, 
                             {"module": "tasks.win.rename_namespace"},       # rename
                             {"module": "tasks.win.export_file",             # use new name
-                            "data_inputs": {
+                            "data_key_replace": {
                                 "name": "globals.rename_namespace.new_name"
                                 }                                           # then add name to the list
                             }
@@ -145,7 +145,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 }, 
                 {"step": "post", 
                  "tasks": [{"module": "tasks.win.submit_to_sg", 
-                          "data_inputs": {
+                          "data_key_replace": {
                             "assets": "globals.export_file.export_names"
                           }}]
                 }]
@@ -163,11 +163,69 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 }
        
         self.puzzle.play(tasks, data)
-
         # self.puzzle.context["_data"]["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
         self.assertEqual(self.puzzle.context["_data"]["rename_namespace.new_name"], "nameB_01")
         export_names = self.puzzle.context["_data"]["export_file.export_names"]
         self.assertEqual(["nameA_01", "nameB_01"], export_names)
+
+    def test_data_defaults(self):
+        """
+        we can add default values at task setting
+        in this case, data is blank but default sets 100.
+        result is 100
+        """
+
+        print("test_data_defaults")
+
+        tasks = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
+                                             "data_defaults": {"add": 100}
+                                             }]
+                 }]
+        
+        data = {"main": {}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+
+        """
+        if we have add key in data.
+        result is 200
+        """
+        data = {"main": {"add": 200}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 200)
+
+    def test_data_override(self):
+        """
+        we can add override values at task setting
+        in this case, data is blank but override value is 100.
+        result is 100
+        """
+
+        print("test_data_override")
+
+        tasks = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
+                                             "data_override": {"add": 100}
+                                            }]
+                 }]
+        
+        data = {"main": {}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+
+        """
+        if we have add key in data.
+        but override exists. result is 100
+        """
+        data = {"main": {"add": 50}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+
+
+
 
 class PuzzleTest(unittest.TestCase):
     def setUp(self):
@@ -197,7 +255,7 @@ class PuzzleTest(unittest.TestCase):
                              "conditions": [{"test": ""}]}, 
                             {"module": "tasks.win.export_file", 
                              "conditions": [{"test": ""}], 
-                             "data_inputs": {
+                             "data_key_replace": {
                                  "name": "globals.rename_namespace.new_name"
                                  }
                             }
@@ -205,7 +263,7 @@ class PuzzleTest(unittest.TestCase):
                 }, 
                 {"step": "post", "tasks": [{"module": "tasks.win.submit_to_sg", 
                           "conditions": [{"test": ""}],
-                          "data_inputs": {
+                          "data_key_replace": {
                             "assets": "globals.export_file.export_names"
                           }}] 
                 }]
