@@ -10,6 +10,7 @@ sys.path.append(module_path)
 # set debug if you want to see log detail
 LOGGER_LEVEL = "critical"
 
+
 class PuzzleTestAndTutorial(unittest.TestCase):
     def setUp(self):
         print("")
@@ -20,6 +21,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         tasks are all OK.
         """
         print("test_simple")
+
         tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file"}]},
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
         
@@ -37,6 +39,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
 
         print("test_task_failed_but_keep_running")
+
 
         tasks = [{"step": "pre", 
                   "tasks": [
@@ -63,6 +66,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
         print("test_task_failed_then_stopped")
 
+
         tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]},
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
         
@@ -80,6 +84,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
 
         print("test_task_failed_stop_but_closure_is_executed")
+
 
         tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]}, # stop here
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]},                           # skip(with no return code)
@@ -99,6 +104,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
 
         print("test_init_flow")
+
         tasks = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"}, 
                                            {"module": "tasks.win.get_from_scene"}]}, # generate main data
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
@@ -106,11 +112,11 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"init": {"open_path": "somewhere"}} # data override by "get_from_scene" context
         # add 3 main data inside "init"
         # task runs 2(init) + 3(main) times.runturn_code must be five 0
-       
+
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
-        self.assertEqual([0, 0, 0, 0, 0], return_codes)        
+        self.assertEqual([0, 0, 0, 0, 0], return_codes)
 
     def test_update_data_and_use_it_in_other_task(self):
         """
@@ -122,6 +128,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         if we want to use context[_data] at next step, we must set value as list( or maybe dict)
         this is closly breaking rules. but it depend on us.
         """
+
 
         print("test_update_data_and_use_it_in_other_task")
         tasks = [{"step": "pre", 
@@ -151,6 +158,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                     "fps": 24,
                     "start_frame": 101,
                     "end_frame": 200
+
                     }
                 }
        
@@ -175,6 +183,7 @@ class PuzzleTest(unittest.TestCase):
         """
 
         print("test_skip_flow")
+
         tasks = [{"step": "pre", 
                   "tasks": [
                             {"module": "tasks.win.get_from_scene"}  # {"main": [{"name": "a"}, {"name": "b"}, {"name": "c"}]}
@@ -203,7 +212,6 @@ class PuzzleTest(unittest.TestCase):
         
         data = {}
 
-       
         self.puzzle.play(tasks, data)
 
         names = [l["name"] for l in self.puzzle.context["_data"]["main"]]
@@ -212,10 +220,11 @@ class PuzzleTest(unittest.TestCase):
     def test_init_is_blank_then_break(self):
         """
         when init data is empty or not exactry what we want.
-        stop progress when force flag is True and set return code != [0, 2]
+        stop progress when break_on_exceptions flag is True and set return code != [0, 2]
         """
 
         print("test_init_is_blank_then_break")
+
         tasks = [{"step": "init", 
                   "tasks": [{"module": "tasks.win.open_file"},               # 0
                           {"module": "tasks.win.get_from_scene_empty",       # 1 
@@ -223,7 +232,7 @@ class PuzzleTest(unittest.TestCase):
                  {"step": "main", 
                   "tasks": [{"module": "tasks.win.export_file"}]}]           # this tasks will skipped
 
-        data = {"init": {"open_path": "somewhere"}}       
+        data = {"init": {"open_path": "somewhere"}}
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
@@ -232,28 +241,30 @@ class PuzzleTest(unittest.TestCase):
     def test_init_is_nothing(self):
         """
         when init data is empty but task need to run.
-        do not set force flag True
+        do not set break_on_exceptions flag True
         """
 
         print("test_init_is_nothing")
+
         tasks = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"},              # 0
                                             {"module": "tasks.win.get_from_scene_empty"}]}, # 1
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]},          # this tasks will skipped.
                  {"step": "post", "tasks": [{"module": "tasks.win.export_file"}]}]          # 0
 
-        data = {"init": {"open_path": "somewhere"}, 
-                "post": {"name": "somewhere"}} # data override from "get_from_scene"
-       
+        data = {"init": {"open_path": "somewhere"},
+                "post": {"name": "somewhere"}}  # data override from "get_from_scene"
+
         self.puzzle.play(tasks, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 1, 0], return_codes)
 
-    def test_conditions_skip_and_force_true(self):
+    def test_conditions_skip_and_break_on_exceptions_true(self):
         """
         task run when category is chara.
         skip with condition is not error, so every task will run fine.
         """
+
 
         print("test_conditions_skip_and_force_true")
         tasks = [{
@@ -276,11 +287,14 @@ class PuzzleTest(unittest.TestCase):
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 0, 2, 2], return_codes)
 
+
     def test_break_on_exceptions_is_true_and_error_occur(self):
+
         """
         task run when category is bg.but some error inside script.
-        then stop all because force key is True.
+        then stop all because break_on_exceptions key is True.
         """
+
 
         print("test_break_on_exceptions_is_true_and_error_occur")
         tasks = [{
