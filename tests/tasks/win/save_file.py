@@ -19,7 +19,7 @@ TASK_NAME = "SaveFile"
 
 def main(event={}, context={}):
     data = event.get("data", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
     logger = context.get("logger")
     if not logger:
         logger = PzLog().logger
@@ -30,8 +30,8 @@ def main(event={}, context={}):
     logger.details.add_detail("file saved to: {}".format(data["path"]))
     print("|RESULT| file saved to: {}".format(data))
 
-    data_globals["{}.data_globals_test".format(TASK_NAME)] = TASK_NAME
-    return {"return_code": 0, "data_globals": data_globals}
+    update_context["{}.update_context_test".format(TASK_NAME)] = TASK_NAME
+    return {"return_code": 0, "update_context": update_context}
 
 if __name__ == "__main__":
     event = {"data": {"path": "A"}}

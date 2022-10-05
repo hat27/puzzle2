@@ -9,14 +9,14 @@ def main(event={}, context={}):
     if not logger:
         logger = PzLog().logger
 
-    data_globals = event.get("data_globals", {})
-    data_globals["main"] = []
+    update_context = {}
+    update_context["main"] = []
 
-    logger.debug("add data: {}".format(data_globals))
-    if len(data_globals["main"]) == 0:
-        return {"return_code": 1, "data_globals": data_globals}
+    logger.debug("add data: {}".format(update_context))
+    if len(update_context["main"]) == 0:
+        return {"return_code": 1, "update_context": update_context}
     else:
-        return {"return_code": 0, "data_globals": data_globals}
+        return {"return_code": 0, "update_context": update_context}
 
 
 if __name__ == "__main__":
