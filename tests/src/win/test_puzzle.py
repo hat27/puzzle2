@@ -196,6 +196,63 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         self.assertEqual(set([0]), set(return_codes))
 
 
+    def test_data_defaults(self):
+        """
+        we can add default values at task setting
+        in this case, data is blank but default sets 100.
+        result is 100
+        """
+
+        print("test_data_defaults")
+
+        tasks = {"main": [{"module": "tasks.win.add_specified_data", 
+                           "data_defaults": {"add": 100}
+                          }]}
+        
+        data = {"main": {}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.data_globals["add_specified_data.add"], 100)
+
+        """
+        if we have add key in data.
+        result is 200
+        """
+        data = {"main": {"add": 200}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.data_globals["add_specified_data.add"], 200)
+
+    def test_data_override(self):
+        """
+        we can add override values at task setting
+        in this case, data is blank but override value is 100.
+        result is 100
+        """
+
+        print("test_data_override")
+
+        tasks = {"main": [{"module": "tasks.win.add_specified_data", 
+                           "data_override": {"add": 100}
+                          }]}
+        
+        data = {"main": {}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.data_globals["add_specified_data.add"], 100)
+
+        """
+        if we have add key in data.
+        but override exists. result is 100
+        """
+        data = {"main": {"add": 50}}
+
+        self.puzzle.play(tasks, data)
+        self.assertEqual(self.puzzle.data_globals["add_specified_data.add"], 100)
+
+
+
+
 class PuzzleTest(unittest.TestCase):
     def setUp(self):
         self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True)
