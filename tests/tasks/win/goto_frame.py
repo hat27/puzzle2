@@ -19,11 +19,10 @@ PIECE_NAME = "GotoFrame"
 
 def main(event={}, context={}):
     status = 1
-    data_globals = event.get("data_globals", {})
     logger = context.get("logger", PzLog().logger)
     logger.debug("test")
 
-    return {"return_code": status, "data_globals": data_globals}
+    return {"return_code": status}
 
 if __name__ == "__main__":
     main()

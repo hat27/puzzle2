@@ -20,7 +20,7 @@ from puzzle2.PzLog import PzLog
 def main(event={}, context={}):
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
     logger = context.get("logger")    
     if not logger:
         logger = PzLog().logger
@@ -29,8 +29,8 @@ def main(event={}, context={}):
     logger.info("frame is: {}".format(data["frame"]))
 
     frame = data["frame"] + 100
-    data_globals["frame"] = frame
-    data_globals["XXXXX"] = "abcde"
+    update_context["frame"] = frame
+    update_context["XXXXX"] = "abcde"
 
     logger.info("set frame to: {}(info)".format(frame))
     logger.debug("set frame to: {}(debug)".format(frame))
@@ -43,8 +43,8 @@ def main(event={}, context={}):
     # logger.success(ui, "FINISHED!")
     # logger.updateUI(ui, "Updated!", level="RESULT")
 
-    data_globals["{}.data_globals_test".format(TASK_NAME)] = TASK_NAME
-    return {"return_code": return_code, "data_globals": data_globals}
+    update_context["{}.data_globals_test".format(TASK_NAME)] = TASK_NAME
+    return {"return_code": return_code, "update_context": update_context}
 
 if __name__ == "__main__":
     # from config file
@@ -54,7 +54,6 @@ if __name__ == "__main__":
     data = {"frame": 156789}
 
     # from previus task
-    data_globals = {"frame": 10}
 
     event = {"task": task, "data": data}
 

@@ -14,7 +14,7 @@ def main(event={}, context={}):
 
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
 
     logger = context.get("logger")
     if not logger:
@@ -24,9 +24,9 @@ def main(event={}, context={}):
 
     logger.debug(data["name"])
 
-    data_globals["{}.new_name".format(TASK_NAME)] = "new_name"
+    update_context["{}.new_name".format(TASK_NAME)] = "new_name"
 
-    return {"return_code": return_code, "data_globals": data_globals}
+    return {"return_code": return_code, "update_context": update_context}
 
 
 if __name__ == "__main__":

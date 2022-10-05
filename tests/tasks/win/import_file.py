@@ -13,7 +13,6 @@ def main(event={}, context={}):
 
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
 
     logger = context.get("logger")
     if not logger:
@@ -21,7 +20,7 @@ def main(event={}, context={}):
 
     return_code = 0
 
-    return {"return_code": return_code, "data_globals": data_globals}
+    return {"return_code": return_code}
 
 
 if __name__ == "__main__":
