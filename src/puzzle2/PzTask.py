@@ -41,40 +41,48 @@ class PzTask(object):
         # if "logger" in self.context:
         #    self.context["logger"] = self.logger
         # print(self.logger.handlers)
+        
+        for k, v in self.task.get("data_defaults", {}).items():
+            self.data.setdefault(k, v)
 
-        if "data_inputs" in self.task:
-            """
-            if startswith "data." or no prefix search from data,
-            else startswith "globals." seach from data_globals
-            """
-            for k, v in self.task["data_inputs"].items():
-                if v.startswith("globals."):
-                    name = v.replace("globals.", "")
-                    if name in self.data_globals:
-                        self.data[k] = self.data_globals[name]
-                else:
-                    name = v.replace("data.", "")
-                    if name in self.data:
-                        self.data[k] = self.data[v]
-                        del self.data[v]
+        """
+        if startswith "data." or no prefix search from data,
+        else startswith "globals." seach from data_globals
+
+        TODO:
+            'data_inputs' will rename to 'data_key_replace' soon
+        """
+        for k, v in self.task.get("data_inputs", {}).items():
+            if v.startswith("globals."):
+                name = v.replace("globals.", "")
+                if name in self.data_globals:
+                    self.data[k] = self.data_globals[name]
+            else:
+                name = v.replace("data.", "")
+                if name in self.data:
+                    self.data[k] = self.data[v]
+                    del self.data[v]
 
         self.header = self.task["name"]
         self.skip = False
-        if "conditions" in self.task:
-            for condition in self.task["conditions"]:
-                for k, v in condition.items():
-                    if k not in self.data:
+
+        for condition in self.task.get("conditions", []):
+            for k, v in condition.items():
+                if k not in self.data:
+                    self.skip = True
+                    self.return_code = 2
+                    break
+                if isinstance(v, list):
+                    if not self.data[k] in v:
                         self.skip = True
                         self.return_code = 2
-                        break
-                    if isinstance(v, list):
-                        if not self.data[k] in v:
-                            self.skip = True
-                            self.return_code = 2
-                    else:
-                        if v != self.data[k]:
-                            self.skip = True
-                            self.return_code = 2
+                else:
+                    if v != self.data[k]:
+                        self.skip = True
+                        self.return_code = 2
+
+        for k, v in self.task.get("data_override", {}).items():
+            self.data[k] = v
 
         if hasattr(self.module, "DATA_KEY_REQUIRED") and not self.skip:
             data_key_required = list(set(self.module.DATA_KEY_REQUIRED) - set(self.data.keys()))
