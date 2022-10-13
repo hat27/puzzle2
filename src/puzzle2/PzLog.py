@@ -23,10 +23,12 @@ SUCCESS = 100  # Custom
 RESULT = 101  # Custom
 ALERT = 102  # Custom
 FLAG = 103  # Custom
+NOTICE = 104  # Custom
 logging.addLevelName(SUCCESS, 'SUCCESS')
 logging.addLevelName(RESULT, 'RESULT')
 logging.addLevelName(ALERT, 'ALERT')
 logging.addLevelName(FLAG, 'FLAG')
+logging.addLevelName(NOTICE, 'NOTICE')
 
 
 class Details(object):
@@ -181,6 +183,11 @@ class PzLogger(logging.Logger):
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
             self.update_ui(msg, "info", **kwargs)
+
+    def notice(self, msg, *args, **kwargs):
+        if self.isEnabledFor(NOTICE):
+            self._log(NOTICE, msg, args, **kwargs)
+            self.update_ui(msg, "notice", **kwargs)
 
     def debug(self, msg, *args, **kwargs):
         if self.isEnabledFor(DEBUG):
