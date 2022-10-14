@@ -43,7 +43,7 @@ def get_log_directory(modulename="puzzle"):
 def get_user_name():
     if "PUZZLE_USERNAME" in os.environ:
         return os.environ["PUZZLE_USERNAME"]
-    return os.environ["USERNAME"]
+    return os.environ.get("USERNAME", "unknown")
 
 def get_python_version():
     version_info = sys.version_info

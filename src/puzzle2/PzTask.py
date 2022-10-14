@@ -48,7 +48,7 @@ class PzTask(object):
         for k, v in self.task.get("data_key_replace", {}).items():
             if v.startswith("globals."):
                 name = v.replace("globals.", "")
-                if name in self.context["data"]:
+                if name in self.context.get("data", {}):
                     self.data[k] = self.context["data"][name]
             else:
                 name = v.replace("data.", "")
