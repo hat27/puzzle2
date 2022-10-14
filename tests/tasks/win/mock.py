@@ -26,7 +26,7 @@ def main(event={}, context={}):
 
     update_context["{}.new_name".format(TASK_NAME)] = "new_name"
 
-    return {"return_code": return_code, "update_context": update_context}
+    return {"return_code": return_code, "update_context_data": update_context}
 
 
 if __name__ == "__main__":

@@ -163,9 +163,9 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 }
        
         self.puzzle.play(tasks, data)
-        # self.puzzle.context["_data"]["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
-        self.assertEqual(self.puzzle.context["_data"]["rename_namespace.new_name"], "nameB_01")
-        export_names = self.puzzle.context["_data"]["export_file.export_names"]
+        # self.puzzle.context["data"]["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
+        self.assertEqual(self.puzzle.context["data"]["rename_namespace.new_name"], "nameB_01")
+        export_names = self.puzzle.context["data"]["export_file.export_names"]
         self.assertEqual(["nameA_01", "nameB_01"], export_names)
 
     def test_data_defaults(self):
@@ -185,7 +185,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
 
         """
         if we have add key in data.
@@ -194,7 +194,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {"add": 200}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 200)
+        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 200)
 
     def test_data_override(self):
         """
@@ -213,7 +213,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
 
         """
         if we have add key in data.
@@ -222,7 +222,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {"add": 50}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["_data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
 
 
 
@@ -272,7 +272,7 @@ class PuzzleTest(unittest.TestCase):
 
         self.puzzle.play(tasks, data)
 
-        names = [l["name"] for l in self.puzzle.context["_data"]["main"]]
+        names = [l["name"] for l in self.puzzle.context["data"]["main"]]
         self.assertEqual("a,b,c", ",".join(names))
 
     def test_init_is_blank_then_break(self):

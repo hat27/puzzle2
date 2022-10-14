@@ -14,9 +14,9 @@ def main(event={}, context={}):
 
     logger.debug("add data: {}".format(update_context))
     if len(update_context["main"]) == 0:
-        return {"return_code": 1, "update_context": update_context}
+        return {"return_code": 1, "update_context_data": update_context}
     else:
-        return {"return_code": 0, "update_context": update_context}
+        return {"return_code": 0, "update_context_data": update_context}
 
 
 if __name__ == "__main__":

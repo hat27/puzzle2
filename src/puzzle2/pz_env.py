@@ -1,23 +1,26 @@
 # -*- coding: utf8 -*-
 
 import os
+import sys
+import datetime
+import platform
 
 TEMP_PATH = os.environ["TEMP"].split(";")[0].replace("\\", "/")
-PLATFORM = False
+APP = False
 try:
     import maya.cmds
-    PLATFORM = "maya"
+    APP = "maya"
 except BaseException:
     pass
 
 try:
     from pyfbsdk import FBSystem
-    PLATFORM = "mobu"
+    APP = "mobu"
 except BaseException:
     pass
 
-if not PLATFORM:
-    PLATFORM = "win"
+if not APP:
+    APP = "win"
 
 
 def get_log_template():
@@ -42,6 +45,26 @@ def get_user_name():
         return os.environ["PUZZLE_USERNAME"]
     return os.environ["USERNAME"]
 
+def get_python_version():
+    version_info = sys.version_info
+    return {"major": version_info.major, "minor": version_info.minor}
 
-def get_platform():
-    return PLATFORM
+def get_APP():
+    return APP
+
+def get_env():
+    env = {
+        "app": APP,
+        "user_name": get_user_name(),
+        "datetime": datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S"),
+        "os": {"system": platform.system(),
+               "release": platform.release(),
+               "version": platform.version(),
+               "platform": platform.platform()},
+        "python_version": get_python_version()
+
+    }
+    return env
+
+if __name__ == "__main__":
+    print(get_env())

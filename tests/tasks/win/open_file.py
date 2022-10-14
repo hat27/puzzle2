@@ -55,7 +55,7 @@ def main(event={}, context={}):
     logger.debug("done.")
 
     update_context["{}.update_context_test".format(TASK_NAME)] = TASK_NAME
-    return {"return_code": 0, "update_context": update_context}
+    return {"return_code": 0, "update_context_data": update_context}
 
 if __name__ == "__main__":
     event = {"data": {"open_path": "A"}}

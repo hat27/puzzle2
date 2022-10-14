@@ -44,7 +44,7 @@ def main(event={}, context={}):
     # logger.updateUI(ui, "Updated!", level="RESULT")
 
     update_context["{}.data_globals_test".format(TASK_NAME)] = TASK_NAME
-    return {"return_code": return_code, "update_context": update_context}
+    return {"return_code": return_code, "update_context_data": update_context}
 
 if __name__ == "__main__":
     # from config file

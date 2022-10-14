@@ -24,7 +24,7 @@ def main(event={}, context={}):
     for k, v in data.get("revert", {}).items():
         logger.debug("{}: {}".format(k, v))
 
-    return {"return_code": return_code, "update_context": update_context}
+    return {"return_code": return_code, "update_context_data": update_context}
 
 
 if __name__ == "__main__":
