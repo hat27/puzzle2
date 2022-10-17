@@ -43,13 +43,13 @@ class PzTask(object):
 
             """
             if startswith "data." or no prefix search from data,
-            else startswith "globals." seach from data_globals
+            else startswith "globals." seach from context.data
             """
         for k, v in self.task.get("data_key_replace", {}).items():
             if v.startswith("globals."):
                 name = v.replace("globals.", "")
-                if name in self.context["_data"]:
-                    self.data[k] = self.context["_data"][name]
+                if name in self.context.get("data", {}):
+                    self.data[k] = self.context["data"][name]
             else:
                 name = v.replace("data.", "")
                 if name in self.data:
@@ -86,7 +86,7 @@ class PzTask(object):
                 self.skip = True
                 self.return_code = 5
 
-    def execute(self, data_globals={}):
+    def execute(self, context_data={}):
         """
          --------------------
          response return_code
@@ -100,9 +100,9 @@ class PzTask(object):
         """
 
         # Use self.context[_data] by default.
-        # Only use optional data_globals if provided, such as executing this instance several times.
-        if data_globals:
-            self.context["_data"] = data_globals
+        # Only use optional context_data if provided, such as executing this instance several times.
+        if context_data:
+            self.context["data"] = context_data
 
         response = {}
         if self.skip:

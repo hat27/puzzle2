@@ -166,15 +166,17 @@ class Puzzle(object):
                               context=self.context)
 
                 response = task.execute()  # {"return_code": A, "data_globals": B}
-                if "update_context" in response:
-                    for key, value in response["update_context"].items():
+
+                for key_name in ["update_context_data", "update_context_env"]:
+                    category = key_name.split("_")[-1]
+                    for key, value in response.get(key_name, {}).items():
                         if isinstance(value, dict):
-                            self.context["_data"].setdefault(key, {})
-                            self.context["_data"][key].update(value)
+                            self.context[category].setdefault(key, {})
+                            self.context[category][key].update(value)
                         elif isinstance(value, list):
-                            self.context["_data"].setdefault(key, []).extend(value)
+                            self.context[category].setdefault(key, []).extend(value)
                         else:
-                            self.context["_data"][key] = value
+                            self.context[category][key] = value
 
                 return response
 
@@ -221,7 +223,7 @@ class Puzzle(object):
 
         # initialize
         self.logger.details.clear()
-        self.context = {"_data": {}, "logger": self.logger}
+        self.context = {"data": {}, "env": pz_env.get_env(), "logger": self.logger}
         self.break_ = False
 
         inp = datetime.datetime.now()
@@ -251,7 +253,7 @@ class Puzzle(object):
                           common=common,
                           step="init")
 
-            for key, value in self.context["_data"].items():
+            for key, value in self.context["data"].items():
                 if key in data_set:
                     if isinstance(data_set[key], list):
                         data_set[key] = value
