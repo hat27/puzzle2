@@ -215,11 +215,12 @@ class PzLog(object):
         :param logger_level: Logger level
         :param log_directory: Dir for log files
         :param log_filename: Filename excluding extension to be used for .log and .conf files
+        :param template_file: Path to custom .template file to be used for logging config
         """
         if name is None:
             name = "unknown"
 
-        self.template = pz_env.get_log_template()
+        self.template = kwargs.get("template_file", pz_env.get_log_template())
         self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory("Pzlog"))
         self.name = name
         self.filename = kwargs.get("log_filename", name)  # Filename for log and config files
