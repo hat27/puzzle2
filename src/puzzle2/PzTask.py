@@ -4,17 +4,13 @@ import copy
 import traceback
 
 from . import PzLog
-
-
 class PzTask(object):
     def __init__(self, **args):
         self.task = args.get("task", {})
 
         self.data = copy.deepcopy(args.get("data", {}))
-        self.data_globals = args.get("data_globals", {})
-
         self.context = args.get("context", {})
-        self.logger = args.get("logger", False)
+        self.logger = self.context.get("logger")
         self.module = args.get("module", False)
 
         self.return_code = 0
@@ -35,8 +31,7 @@ class PzTask(object):
         if not self.logger:
             log = PzLog.PzLog()
             self.logger = log.logger
-
-        self.context.setdefault("logger", self.logger)
+            self.context.setdefault("logger", self.logger)
 
         # if "logger" in self.context:
         #    self.context["logger"] = self.logger
@@ -45,18 +40,16 @@ class PzTask(object):
         for k, v in self.task.get("data_defaults", {}).items():
             self.data.setdefault(k, v)
 
-        """
-        if startswith "data." or no prefix search from data,
-        else startswith "globals." seach from data_globals
 
-        TODO:
-            'data_inputs' will rename to 'data_key_replace' soon
-        """
-        for k, v in self.task.get("data_inputs", {}).items():
+            """
+            if startswith "data." or no prefix search from data,
+            else startswith "globals." seach from context.data
+            """
+        for k, v in self.task.get("data_key_replace", {}).items():
             if v.startswith("globals."):
                 name = v.replace("globals.", "")
-                if name in self.data_globals:
-                    self.data[k] = self.data_globals[name]
+                if name in self.context.get("data", {}):
+                    self.data[k] = self.context["data"][name]
             else:
                 name = v.replace("data.", "")
                 if name in self.data:
@@ -93,7 +86,7 @@ class PzTask(object):
                 self.skip = True
                 self.return_code = 5
 
-    def execute(self, data_globals={}):
+    def execute(self, context_data={}):
         """
          --------------------
          response return_code
@@ -106,22 +99,23 @@ class PzTask(object):
          5: require key is not exists
         """
 
-        # Use self.data_globals by default.
-        # Only use optional data_globals if provided, such as executing this instance several times.
-        data_globals = data_globals if data_globals else self.data_globals
+        # Use self.context[_data] by default.
+        # Only use optional context_data if provided, such as executing this instance several times.
+        if context_data:
+            self.context["data"] = context_data
 
         response = {}
         if self.skip:
             self.logger.debug("task skipped")
             self.logger.details.set_header(self.return_code, "skipped: {}".format(self.name))
-            response = {"return_code": self.return_code, "data_globals": data_globals}
+            response = {"return_code": self.return_code}
         else:
-            event = {"task": self.task, "data": self.data, "data_globals": data_globals}
+            event = {"task": self.task, "data": self.data}
 
-            # set default header
-            # self.context = {"logger": self.logger}
             response = self.module.main(event, self.context)
             if response is None:
-                response = {"return_code": self.return_code, "data_globals": data_globals}
+                response = {"return_code": self.return_code}
+
+        response.setdefault("return_code", self.return_code)
 
         return response

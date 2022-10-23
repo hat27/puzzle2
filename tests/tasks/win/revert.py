@@ -13,18 +13,18 @@ def main(event={}, context={}):
 
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
 
     logger = context.get("logger")
     if not logger:
         logger = PzLog().logger
 
     return_code = 0
-
-    for k, v in data["revert"].items():
+    logger.debug("revert run")
+    for k, v in data.get("revert", {}).items():
         logger.debug("{}: {}".format(k, v))
 
-    return {"return_code": return_code, "data_globals": data_globals}
+    return {"return_code": return_code, "update_context_data": update_context}
 
 
 if __name__ == "__main__":

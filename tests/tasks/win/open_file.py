@@ -25,7 +25,7 @@ def main(event={}, context={}):
         logger = PzLog().logger
 
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
 
     logger = context.get("logger")
     if not logger:
@@ -54,8 +54,8 @@ def main(event={}, context={}):
     logger.details.set_header(0, "open file successed")
     logger.debug("done.")
 
-    data_globals["{}.data_globals_test".format(TASK_NAME)] = TASK_NAME
-    return {"return_code": 0, "data_globals": data_globals}
+    update_context["{}.update_context_test".format(TASK_NAME)] = TASK_NAME
+    return {"return_code": 0, "update_context_data": update_context}
 
 if __name__ == "__main__":
     event = {"data": {"open_path": "A"}}

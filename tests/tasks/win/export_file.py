@@ -20,7 +20,7 @@ from puzzle2.PzLog import PzLog
 def main(event={}, context={}):
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
+    update_context = {}
     logger = context.get("logger")    
     if not logger:
         logger = PzLog().logger
@@ -31,9 +31,9 @@ def main(event={}, context={}):
     logger.debug("export: {}".format(data["name"]))
     logger.details.add_detail("test details")
     
-    data_globals.setdefault("{}.export_names".format(TASK_NAME), []).append(data["name"])
+    update_context.setdefault("{}.export_names".format(TASK_NAME), []).append(data["name"])
 
-    return {"return_code": return_code, "data_globals": data_globals}
+    return {"return_code": return_code, "update_context_data": update_context}
 
 if __name__ == "__main__":
     # data
