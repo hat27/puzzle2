@@ -8,7 +8,7 @@ def main(event={}, context={}):
     data = event["data"]
     update_context = {}
     update_context["{}.add".format(PIECE_NAME)] = data["add"]
-    return {"update_context_data": update_context}
+    return {"update_context": update_context}
 
 if __name__ == "__main__":
     event = {"data": {"add": 1}}

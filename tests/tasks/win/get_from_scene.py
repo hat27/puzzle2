@@ -16,7 +16,7 @@ def main(event={}, context={}):
 
     logger.debug("add data: {}".format(update_context))
 
-    return {"return_code": 0, "update_context_data": update_context}
+    return {"return_code": 0, "update_context": update_context}
 
 
 if __name__ == "__main__":
