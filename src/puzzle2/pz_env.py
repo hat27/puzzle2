@@ -54,14 +54,14 @@ def get_APP():
 
 def get_env():
     env = {
-        "app": APP,
-        "user_name": get_user_name(),
-        "datetime": datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S"),
-        "os": {"system": platform.system(),
+        "_app_": APP,
+        "_user_name_": get_user_name(),
+        "_datetime_": datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S"),
+        "_os_": {"system": platform.system(),
                "release": platform.release(),
                "version": platform.version(),
                "platform": platform.platform()},
-        "python_version": get_python_version()
+        "_python_version_": get_python_version()
 
     }
     return env

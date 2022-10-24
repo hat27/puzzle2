@@ -138,7 +138,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                             {"module": "tasks.win.rename_namespace"},       # rename
                             {"module": "tasks.win.export_file",             # use new name
                             "data_key_replace": {
-                                "name": "globals.rename_namespace.new_name"
+                                "name": "context.rename_namespace.new_name"
                                 }                                           # then add name to the list
                             }
                            ]
@@ -146,7 +146,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 {"step": "post", 
                  "tasks": [{"module": "tasks.win.submit_to_sg", 
                           "data_key_replace": {
-                            "assets": "globals.export_file.export_names"
+                            "assets": "context.export_file.export_names"
                           }}]
                 }]
         
@@ -163,9 +163,9 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 }
        
         self.puzzle.play(tasks, data)
-        # self.puzzle.context["data"]["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
-        self.assertEqual(self.puzzle.context["data"]["rename_namespace.new_name"], "nameB_01")
-        export_names = self.puzzle.context["data"]["export_file.export_names"]
+        # self.puzzle.context["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
+        self.assertEqual(self.puzzle.context["rename_namespace.new_name"], "nameB_01")
+        export_names = self.puzzle.context["export_file.export_names"]
         self.assertEqual(["nameA_01", "nameB_01"], export_names)
 
     def test_data_defaults(self):
@@ -185,7 +185,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
         """
         if we have add key in data.
@@ -194,7 +194,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {"add": 200}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 200)
+        self.assertEqual(self.puzzle.context["add_specified_data.add"], 200)
 
     def test_data_override(self):
         """
@@ -213,7 +213,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
         """
         if we have add key in data.
@@ -222,7 +222,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"main": {"add": 50}}
 
         self.puzzle.play(tasks, data)
-        self.assertEqual(self.puzzle.context["data"]["add_specified_data.add"], 100)
+        self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
 
 
@@ -256,7 +256,7 @@ class PuzzleTest(unittest.TestCase):
                             {"module": "tasks.win.export_file", 
                              "conditions": [{"test": ""}], 
                              "data_key_replace": {
-                                 "name": "globals.rename_namespace.new_name"
+                                 "name": "context.rename_namespace.new_name"
                                  }
                             }
                         ]
@@ -264,7 +264,7 @@ class PuzzleTest(unittest.TestCase):
                 {"step": "post", "tasks": [{"module": "tasks.win.submit_to_sg", 
                           "conditions": [{"test": ""}],
                           "data_key_replace": {
-                            "assets": "globals.export_file.export_names"
+                            "assets": "context.export_file.export_names"
                           }}] 
                 }]
         
@@ -272,7 +272,7 @@ class PuzzleTest(unittest.TestCase):
 
         self.puzzle.play(tasks, data)
 
-        names = [l["name"] for l in self.puzzle.context["data"]["main"]]
+        names = [l["name"] for l in self.puzzle.context["main"]]
         self.assertEqual("a,b,c", ",".join(names))
 
     def test_init_is_blank_then_break(self):

@@ -36,12 +36,12 @@ class TaskFunctionTest(unittest.TestCase):
     def test_data_key_replace_from_other_task(self):
         data = {"name": "nameA"}
         task = {"data_key_replace": {
-                    "name": "globals.new_name"
+                    "name": "context.new_name"
                }}
         
-        context = {"data": {"new_name": "nameB"}}
+        context = {"new_name": "nameB"}
         pz_task = PzTask(module=mock, task=task, data=data, context=context)
-        self.assertEqual(pz_task.data["name"], context["data"]["new_name"])
+        self.assertEqual(pz_task.data["name"], context["new_name"])
 
     def test_conditions(self):
         data = {"name": "nameA", "category": "ch"}

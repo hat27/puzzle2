@@ -33,7 +33,7 @@ def main(event={}, context={}):
     
     update_context.setdefault("{}.export_names".format(TASK_NAME), []).append(data["name"])
 
-    return {"return_code": return_code, "update_context_data": update_context}
+    return {"return_code": return_code, "update_context": update_context}
 
 if __name__ == "__main__":
     # data
