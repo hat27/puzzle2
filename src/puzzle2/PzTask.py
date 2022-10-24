@@ -68,16 +68,18 @@ class PzTask(object):
 
         for condition in self.task.get("conditions", []):
             for k, v in condition.items():
-                if k not in self.data:
+                d = self.context if k.startswith("context.") else self.data
+                attrName = k.replace("context.", "").replace("data.", "")
+                if attrName not in d:
                     self.skip = True
                     self.return_code = 2
                     break
                 if isinstance(v, list):
-                    if not self.data[k] in v:
+                    if d[attrName] not in v:
                         self.skip = True
                         self.return_code = 2
                 else:
-                    if v != self.data[k]:
+                    if v != d[attrName]:
                         self.skip = True
                         self.return_code = 2
 
