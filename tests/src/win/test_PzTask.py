@@ -36,7 +36,7 @@ class TaskFunctionTest(unittest.TestCase):
     def test_data_key_replace_from_other_task(self):
         data = {"name": "nameA"}
         task = {"data_key_replace": {
-                    "name": "globals.new_name"
+                    "name": "context.new_name"
                }}
         
         context = {"new_name": "nameB"}

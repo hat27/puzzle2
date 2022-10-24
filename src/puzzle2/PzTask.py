@@ -43,11 +43,11 @@ class PzTask(object):
 
             """
             if startswith "data." or no prefix search from data,
-            else startswith "globals." seach from context.data
+            else startswith "context." seach from context.data
             """
         for k, v in self.task.get("data_key_replace", {}).items():
-            if v.startswith("globals."):
-                name = v.replace("globals.", "")
+            if v.startswith("context."):
+                name = v.replace("context.", "")
                 if name in self.context:
                     self.data[k] = self.context[name]
             else:

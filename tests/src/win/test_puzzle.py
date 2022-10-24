@@ -138,7 +138,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                             {"module": "tasks.win.rename_namespace"},       # rename
                             {"module": "tasks.win.export_file",             # use new name
                             "data_key_replace": {
-                                "name": "globals.rename_namespace.new_name"
+                                "name": "context.rename_namespace.new_name"
                                 }                                           # then add name to the list
                             }
                            ]
@@ -146,7 +146,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 {"step": "post", 
                  "tasks": [{"module": "tasks.win.submit_to_sg", 
                           "data_key_replace": {
-                            "assets": "globals.export_file.export_names"
+                            "assets": "context.export_file.export_names"
                           }}]
                 }]
         
@@ -256,7 +256,7 @@ class PuzzleTest(unittest.TestCase):
                             {"module": "tasks.win.export_file", 
                              "conditions": [{"test": ""}], 
                              "data_key_replace": {
-                                 "name": "globals.rename_namespace.new_name"
+                                 "name": "context.rename_namespace.new_name"
                                  }
                             }
                         ]
@@ -264,7 +264,7 @@ class PuzzleTest(unittest.TestCase):
                 {"step": "post", "tasks": [{"module": "tasks.win.submit_to_sg", 
                           "conditions": [{"test": ""}],
                           "data_key_replace": {
-                            "assets": "globals.export_file.export_names"
+                            "assets": "context.export_file.export_names"
                           }}] 
                 }]
         
