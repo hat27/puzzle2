@@ -254,7 +254,7 @@ class Puzzle(object):
 
             for key, value in self.context.items():
                 if key in data_set:
-                    if isinstance(data_set[key], list):
+                    if isinstance(value, list):
                         data_set[key] = value
                     else:
                         data_set[key].update(value)
