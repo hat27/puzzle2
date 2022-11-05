@@ -29,8 +29,12 @@ def get_log_template():
 
 def get_temp_directory(subdir=""):
     path = "%s/%s" % (TEMP_PATH, subdir)
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.isdir(path):
+        try:
+            os.makedirs(path)
+        except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
+            if not os.path.isdir(path):
+                raise
     if path.endswith("/"):
         path = path[:-1]
     return path
@@ -45,12 +49,15 @@ def get_user_name():
         return os.environ["PUZZLE_USERNAME"]
     return os.environ.get("USERNAME", "unknown")
 
+
 def get_python_version():
     version_info = sys.version_info
     return {"major": version_info.major, "minor": version_info.minor}
 
+
 def get_APP():
     return APP
+
 
 def get_env():
     env = {
@@ -58,13 +65,14 @@ def get_env():
         "_user_name_": get_user_name(),
         "_datetime_": datetime.datetime.now().strftime("%y/%m/%d %H:%M:%S"),
         "_os_": {"system": platform.system(),
-               "release": platform.release(),
-               "version": platform.version(),
-               "platform": platform.platform()},
+                 "release": platform.release(),
+                 "version": platform.version(),
+                 "platform": platform.platform()},
         "_python_version_": get_python_version()
 
     }
     return env
+
 
 if __name__ == "__main__":
     print(get_env())
