@@ -38,8 +38,12 @@ def save(path, data, tool_name="", category="", version=""):
     :param version:  info
     :return:  bool
     """
-    if not os.path.exists(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
+    if not os.path.isdir(os.path.dirname(path)):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
+            if not os.path.isdir(os.path.dirname(path)):
+                raise
 
     info_data = {"info": {"name": tool_name,
                           "category": category,

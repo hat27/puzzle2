@@ -44,12 +44,12 @@ class Details(object):
         self.order.append(self.name)
 
         self.index += 1
-    
+
     def add_detail(self, text):
         self._details.setdefault(self.name, []).append(text)
-    
+
     def set_header(self, return_code, text):
-        self._header[self.name] = {"return_code": return_code, 
+        self._header[self.name] = {"return_code": return_code,
                                    "header": text}
 
     def update_code(self, return_code):
@@ -86,9 +86,9 @@ class Details(object):
                 data["details"] = self._details[name]
 
             all_.append(data)
-        
+
         return all_
-    
+
     def clear(self):
         self._header = {}
         self._details = {}
@@ -290,8 +290,12 @@ class PzLog(object):
                     return w.replace(k, v)
             return w
 
-        if not os.path.exists(os.path.dirname(self.config_path)):
-            os.makedirs(os.path.dirname(self.config_path))
+        if not os.path.isdir(os.path.dirname(self.config_path)):
+            try:
+                os.makedirs(os.path.dirname(self.config_path))
+            except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
+                if not os.path.isdir(os.path.dirname(self.config_path)):
+                    raise
 
         with open(self.template, "r") as tx:
             tx_s = tx.read().split("\n")
