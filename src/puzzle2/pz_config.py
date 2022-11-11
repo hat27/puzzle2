@@ -56,7 +56,12 @@ def save(path, data, tool_name="", category="", version=""):
         return True
 
     elif path.endswith(".json"):
-        json.dump(info_data, codecs.open(path, "w"), "utf8", indent=4)
+        try:
+            json.dump(info_data, open(path, "w", encoding="utf8"), ensure_ascii=False, indent=4)
+        except BaseException:
+            json.dump(info_data, open(path, "w"), "utf8", indent=4)
+
         return True
 
     return False
+

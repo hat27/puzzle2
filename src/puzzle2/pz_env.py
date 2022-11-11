@@ -7,6 +7,7 @@ import platform
 
 TEMP_PATH = os.environ["TEMP"].split(";")[0].replace("\\", "/")
 APP = False
+
 try:
     import maya.cmds
     APP = "maya"
@@ -16,6 +17,14 @@ except BaseException:
 try:
     from pyfbsdk import FBSystem
     APP = "mobu"
+
+except BaseException:
+    pass
+
+try:
+    import pymxs
+    APP = "3dsmax"
+
 except BaseException:
     pass
 
@@ -23,9 +32,14 @@ if not APP:
     APP = "win"
 
 
-def get_log_template():
-    return os.path.normpath(os.path.join(__file__, "../log.template")).replace("\\", "/")
+def get_puzzle_path():
+    return os.path.normpath(os.path.join(__file__, "../")).replace("\\", "/")
 
+def get_puzzle_module_path():
+    return os.path.dirname(get_puzzle_path()).replace("\\", "/")
+
+def get_log_template():
+    return "{}/log.template".format(get_puzzle_path())
 
 def get_temp_directory(subdir=""):
     path = "%s/%s" % (TEMP_PATH, subdir)
@@ -67,4 +81,4 @@ def get_env():
     return env
 
 if __name__ == "__main__":
-    print(get_env())
+    print(get_puzzle_path())
