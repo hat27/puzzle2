@@ -68,36 +68,7 @@ class Puzzle(object):
             if task_directory not in sys.path:
                 sys.path.append(task_directory)
 
-    def close_event(self):
-        def _force_close():
-            flg = True
-            message = "force close"
-
-            try:
-                import maya.cmds as cmds
-                import maya.mel as mel
-                mode = "maya"
-            except BaseException:
-                mode = "win"
-            if mode == "maya":
-                try:
-                    mel.eval('scriptJob -cf "busy" "quit -f -ec 0";')
-                    message = u"file app close: maya"
-                    flg = True
-                except BaseException:
-                    message = u"file app close failed: maya"
-                    flg = False
-
-            return flg, message
-
-        message_path = os.environ.get("PUZZLE_MESSAGE_OUTPUT", False)
-        if message_path:
-            pz_config.save(message_path, self.logger.details.get_all())
-
-        if os.environ.get("PUZZLE_CLOSE_APP", False):
-            _force_close()
-
-    def play(self, tasks, data_set):
+    def play(self, tasks, data_set, default_context={}):
         """
          --------------------
          response return_code
@@ -223,7 +194,11 @@ class Puzzle(object):
         # initialize
         self.logger.details.clear()
         self.context = pz_env.get_env()
-        self.context["logger"] = self.logger
+        self.context.setdefault("logger", self.logger)
+
+        for k, v in (default_context or {}).items():
+            self.context[k] = v
+
         self.break_ = False
 
         inp = datetime.datetime.now()
@@ -295,4 +270,3 @@ class Puzzle(object):
             self.logger.info("-closure takes: {}-\n\n".format(datetime.datetime.now() - now))
 
         self.logger.info("- done: {} -".format(datetime.datetime.now() - inp))
-        self.close_event()

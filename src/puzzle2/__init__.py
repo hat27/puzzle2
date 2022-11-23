@@ -8,3 +8,4 @@ from . import pz_config
 from . import PzLog
 from . import PzTask
 from . import Puzzle
+from . import PuzzleBatch
