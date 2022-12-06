@@ -30,8 +30,11 @@ def main(event={}, context={}):
 
     logger.debug("export: {}".format(data["name"]))
     logger.details.add_detail("test details")
-    
-    update_context.setdefault("{}.export_names".format(TASK_NAME), []).append(data["name"])
+
+    # append value to previous task's value.
+    export_names = context.get("{}.export_names".format(TASK_NAME), [])
+    export_names.append(data["name"])
+    update_context["{}.export_names".format(TASK_NAME)] = export_names
 
     return {"return_code": return_code, "update_context": update_context}
 

@@ -119,5 +119,6 @@ class PzTask(object):
                 response = {"return_code": self.return_code}
 
         response.setdefault("return_code", self.return_code)
+        self.logger.debug("return_code: {}".format(response["return_code"]))
 
         return response
