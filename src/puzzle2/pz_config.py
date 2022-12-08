@@ -1,13 +1,14 @@
 # -*- coding: utf8 -*-
-
+import sys
 import os
 import json
 import codecs
+
 try:
     import yaml
 except BaseException:
-    pass
-
+    import traceback
+    traceback.print_exc()
 
 def read(path):
     """
@@ -15,21 +16,24 @@ def read(path):
     :param path:
     :return: info, data
     """
-    info, data = False, False
-    if path.endswith(".yml"):
+    data = {}
+    if sys.version_info.major == 2:
+        with codecs.open(path, "r") as f:
+            if path.endswith(".yml"):
+                data = yaml.load(f, Loader=yaml.SafeLoader)
+            elif path.endswith(".json"):
+                data = json.load(f, "utf8")
+    else:
         with codecs.open(path, "r", "utf8") as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)
-            return data["info"], data["data"]
+            if path.endswith(".yml"):
+                data = yaml.load(f, Loader=yaml.SafeLoader)
+            elif path.endswith(".json"):
+                data = json.load(f)
 
-    elif path.endswith(".json"):
-        with codecs.open(path, "r", encoding="utf8") as f:
-            data = json.load(f)
-            return data["info"], data["data"]
-
-    return info, data
+    return data.get("info", {}), data.get("data", {})
 
 
-def save(path, data, tool_name="", category="", version=""):
+def save(path, data, tool_name="", category="", version="", extend_info={}):
     """
     :param path: save path (.json, .yml)
     :param data:  save data
@@ -50,20 +54,19 @@ def save(path, data, tool_name="", category="", version=""):
                           "version": version},
                  "data": data}
 
-    if path.endswith(".yml"):
-        f = codecs.open(path, "w", "utf8")
-        f.write(yaml.safe_dump(info_data,
-                               default_flow_style=False,
-                               encoding='utf-8',
-                               allow_unicode=True))
-        f.close()
-        return True
-
-    elif path.endswith(".json"):
-        try:
-            json.dump(info_data, open(path, "w", encoding="utf8"), ensure_ascii=False, indent=4)
-        except BaseException:
-            json.dump(info_data, open(path, "w"), "utf8", indent=4)
+    info_data["info"].update(extend_info)
+    if sys.version_info.major == 2:
+        with codecs.open(path, "w") as f:
+            if path.endswith(".yml"):
+                yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
+            elif path.endswith(".json"):
+                json.dump(info_data, f, indent=4, ensure_ascii=False)
+    elif sys.version_info.major == 3:
+        with codecs.open(path, "w", "utf8") as f:
+            if path.endswith(".yml"):
+                yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
+            elif path.endswith(".json"):
+                json.dump(info_data, f, indent=4, ensure_ascii=False)
 
         return True
 

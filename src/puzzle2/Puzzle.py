@@ -68,7 +68,7 @@ class Puzzle(object):
             if task_directory not in sys.path:
                 sys.path.append(task_directory)
 
-    def play(self, tasks, data_set, default_context={}):
+    def play(self, steps, data_set, default_context={}):
         """
          --------------------
          response return_code
@@ -80,6 +80,10 @@ class Puzzle(object):
          4: Module import error/ traceback error
          5: Required key does not exist
         """
+        def _append_sys_path(path):
+            if os.path.normpath(path) not in [os.path.normpath(l) for l in sys.path]:
+                sys.path.append(os.path.normpath(path))
+
         def _execute_step(tasks, data, common, step):
             """
             when data is list, same tasks run for each.
@@ -126,7 +130,12 @@ class Puzzle(object):
                     break_on_exceptions = task.get("break_on_exceptions", False)
                     if response.get("return_code", 0) not in [0, 2] and break_on_exceptions:
                         self.break_ = True
-                        self.logger.debug("set break: True")
+                        self.logger.debug("break on exceptions")
+                        break
+                
+                    if response.get("break_on_conditions") == True:
+                        self.break_ = True
+                        self.logger.debug("break on conditions")
                         break
 
         def _execute_task(task, data):
@@ -143,8 +152,8 @@ class Puzzle(object):
                         if isinstance(value, dict):
                             self.context.setdefault(key, {})
                             self.context[key].update(value)
-                        elif isinstance(value, list):
-                            self.context.setdefault(key, []).extend(value)
+                        # elif isinstance(value, list):
+                        #     self.context.setdefault(key, []).extend(value)
                         else:
                             self.context[key] = value
 
@@ -200,12 +209,11 @@ class Puzzle(object):
             self.context[k] = v
 
         self.break_ = False
-
         inp = datetime.datetime.now()
-        order = [l["step"] for l in tasks]
+        order = [l["step"] for l in steps]
         self.logger.info("- tasks start: {} -\n".format(", ".join(order)))
         common = data_set.get("common", {})
-        if tasks[0]["step"] == "init":
+        if steps[0]["step"] == "init":
             """
             this special step can override data inside process
             if you want to grab some thing from scene, you can use this.
@@ -222,12 +230,14 @@ class Puzzle(object):
             now = datetime.datetime.now()
             self.logger.debug("- init start -")
 
-            _execute_step(tasks=tasks[0]["tasks"],
+            _execute_step(tasks=steps[0]["tasks"],
                           data=data_set.get("init", {}),
                           common=common,
                           step="init")
-
+            
             for key, value in self.context.items():
+                if key.startswith("_") or key == "logger":
+                    continue
                 if key in data_set:
                     if isinstance(data_set[key], list):
                         data_set[key] = value
@@ -237,36 +247,39 @@ class Puzzle(object):
                     data_set[key] = value
             
             self.logger.info("- init takes: {} -\n\n".format(datetime.datetime.now() - now))
+        common = data_set.get("common", {})
 
-        for task in tasks:
-            step = task["step"]
-            if step in ["init", "closure"]:
+        for step in steps:
+            step_name = step["step"]
+            if step_name in ["init", "closure"]:
                 continue
 
             if self.break_:
-                self.logger.debug("break: {}".format(step))
+                self.logger.debug("break: {}".format(step_name))
                 break
+        
+            [_append_sys_path(l) for l in step.get("sys_path", "").split(";") if l != ""]
 
             now = datetime.datetime.now()
-            data_set.setdefault(step, {})
-            self.logger.debug("- {} start -".format(step))
+            data_set.setdefault(step_name, {})
+            self.logger.debug("- {} start - {}".format(step_name, step.get("comment", "")))
 
-            _execute_step(tasks=task["tasks"],
-                          data=data_set[step],
+            _execute_step(tasks=step["tasks"],
+                          data=data_set[step_name],
                           common=common,
-                          step=step)
+                          step=step_name)
             
-            self.logger.info("- {} takes: {} -\n\n".format(step, datetime.datetime.now() - now))
+            self.logger.info("- {} takes: {}-\n".format(step_name, datetime.datetime.now() - now))
 
-        if tasks[-1]["step"] == "closure":
+        if steps[-1]["step"] == "closure":
             self.break_ = False
-            self.logger.debug("- closure start -")
+            self.logger.debug("- closure start - {}".format(steps[-1].get("comment", "")))
             now = datetime.datetime.now()
-            _execute_step(tasks=tasks[-1]["tasks"],
+            _execute_step(tasks=steps[-1]["tasks"],
                           data=data_set.get("closure", {}),
                           common=common,
                           step="closure")
             
-            self.logger.info("-closure takes: {}-\n\n".format(datetime.datetime.now() - now))
+            self.logger.info("-closure takes: {}-\n".format(datetime.datetime.now() - now))
 
-        self.logger.info("- done: {} -".format(datetime.datetime.now() - inp))
+        self.logger.info("- done: {} -\n\n".format(datetime.datetime.now() - inp))

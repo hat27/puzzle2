@@ -22,13 +22,13 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
         print("test_simple")
 
-        tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file"}]},
+        steps = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file"}]},
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
         
         data = {"pre": {"open_path": "somewhere"}, 
                 "main": [{"name": "nameA"}, {"name": "nameB"}]}
         
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         self.assertEqual(self.puzzle.logger.details.get_return_codes(), [0, 0, 0])
 
@@ -41,7 +41,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         print("test_task_failed_but_keep_running")
 
 
-        tasks = [{"step": "pre", 
+        steps = [{"step": "pre", 
                   "tasks": [
                             {"module": "tasks.win.open_file"}
                            ]
@@ -55,7 +55,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         data = {"pre": {"path": "somewhere"},  # "open_path" is required but not exists.
                 "main": [{"name": "nameA"}, {"name": "nameB"}]}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.logger.details.get_return_codes(), [5, 0, 0])
 
     def test_task_failed_then_stopped(self):
@@ -67,13 +67,13 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         print("test_task_failed_then_stopped")
 
 
-        tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]},
+        steps = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]},
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
         
         data = {"pre": {"path": "somewhere"},  # "open_path" is requeired but not exists.then task stopped.
                 "main": [{"name": "nameA"}, {"name": "nameB"}]}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.logger.details.get_return_codes(), [5])
 
     def test_task_failed_stop_but_closure_is_executed(self):
@@ -86,7 +86,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         print("test_task_failed_stop_but_closure_is_executed")
 
 
-        tasks = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]}, # stop here
+        steps = [{"step": "pre", "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]}, # stop here
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]},                           # skip(with no return code)
                  {"step": "closure", "tasks": [{"module": "tasks.win.revert"}]}]                             # closure runs
         
@@ -94,7 +94,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                 "main": [{"name": "nameA"}, {"name": "nameB"}],
                 "common": {"revert": {"a": 1}}}
        
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.logger.details.get_return_codes(), [5, 0])
 
     def test_init_flow(self):
@@ -105,7 +105,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
         print("test_init_flow")
 
-        tasks = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"}, 
+        steps = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"}, 
                                            {"module": "tasks.win.get_from_scene"}]}, # generate main data
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]}]
 
@@ -113,7 +113,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         # add 3 main data inside "init"
         # task runs 2(init) + 3(main) times.runturn_code must be five 0
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 0, 0, 0, 0], return_codes)
@@ -124,14 +124,18 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         set data_key_replace key to task. then use key to at 'export_file'.
 
         IMPORTANT:
-        if step is loop. context[_data] value will overrided.
-        if we want to use context[_data] at next step, we must set value as list( or maybe dict)
-        this is closly breaking rules. but it depend on us.
+            if step is loop. context[data] value will overrided.
+            list will replace all.
+            dict will updated.
+            if we want to use context[data] at next step, we can add to list but we must
+            get value from context[data] then add it to them.
+
+            this is closly breaking rules. but it depend on us.
+            check export_file script.
         """
 
-
         print("test_update_data_and_use_it_in_other_task")
-        tasks = [{"step": "pre", 
+        steps = [{"step": "pre", 
                   "tasks": [{"module": "tasks.win.open_file", "break_on_exceptions": True}]},
                  {"step": "main",
                   "tasks": [{"module": "tasks.win.import_file"}, 
@@ -162,9 +166,13 @@ class PuzzleTestAndTutorial(unittest.TestCase):
                     }
                 }
        
-        self.puzzle.play(tasks, data)
-        # self.puzzle.context["rename_namespace.new_name"] will overrided in the loop, so I only could access to last one.
+        self.puzzle.play(steps, data)
+        # self.puzzle.context["rename_namespace.new_name"] will overrided in the loop, 
+        # so we only could get the last one.
         self.assertEqual(self.puzzle.context["rename_namespace.new_name"], "nameB_01")
+        
+        # when we need to get all values from loop.we have to use trick in scripts.
+        # but it possible.
         export_names = self.puzzle.context["export_file.export_names"]
         self.assertEqual(["nameA_01", "nameB_01"], export_names)
 
@@ -177,14 +185,14 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
         print("test_data_defaults")
 
-        tasks = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
+        steps = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
                                              "data_defaults": {"add": 100}
                                              }]
                  }]
         
         data = {"main": {}}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
         """
@@ -193,7 +201,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
         data = {"main": {"add": 200}}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.context["add_specified_data.add"], 200)
 
     def test_data_override(self):
@@ -205,14 +213,14 @@ class PuzzleTestAndTutorial(unittest.TestCase):
 
         print("test_data_override")
 
-        tasks = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
+        steps = [{"step": "main", "tasks": [{"module": "tasks.win.add_specified_data", 
                                              "data_override": {"add": 100}
                                             }]
                  }]
         
         data = {"main": {}}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
         """
@@ -221,7 +229,7 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         """
         data = {"main": {"add": 50}}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
 
@@ -242,7 +250,7 @@ class PuzzleTest(unittest.TestCase):
 
         print("test_skip_flow")
 
-        tasks = [{"step": "pre", 
+        steps = [{"step": "pre", 
                   "tasks": [
                             {"module": "tasks.win.get_from_scene"}  # {"main": [{"name": "a"}, {"name": "b"}, {"name": "c"}]}
                            ]
@@ -270,7 +278,7 @@ class PuzzleTest(unittest.TestCase):
         
         data = {}
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         names = [l["name"] for l in self.puzzle.context["main"]]
         self.assertEqual("a,b,c", ",".join(names))
@@ -283,15 +291,15 @@ class PuzzleTest(unittest.TestCase):
 
         print("test_init_is_blank_then_break")
 
-        tasks = [{"step": "init", 
+        steps = [{"step": "init", 
                   "tasks": [{"module": "tasks.win.open_file"},               # 0
-                          {"module": "tasks.win.get_from_scene_empty",       # 1 
-                           "break_on_exceptions": True}]},
+                            {"module": "tasks.win.get_from_scene_empty",       # 1 
+                             "break_on_exceptions": True}]},
                  {"step": "main", 
                   "tasks": [{"module": "tasks.win.export_file"}]}]           # this tasks will skipped
 
         data = {"init": {"open_path": "somewhere"}}
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 1], return_codes)
@@ -304,7 +312,7 @@ class PuzzleTest(unittest.TestCase):
 
         print("test_init_is_nothing")
 
-        tasks = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"},              # 0
+        steps = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"},              # 0
                                             {"module": "tasks.win.get_from_scene_empty"}]}, # 1
                  {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]},          # this tasks will skipped.
                  {"step": "post", "tasks": [{"module": "tasks.win.export_file"}]}]          # 0
@@ -312,10 +320,31 @@ class PuzzleTest(unittest.TestCase):
         data = {"init": {"open_path": "somewhere"},
                 "post": {"name": "somewhere"}}  # data override from "get_from_scene"
 
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 1, 0], return_codes)
+
+    def test_init_is_nothing_and_break_safely(self):
+        """
+        when init data is empty, just stop all tasks.
+        add 'break_on_conditions' to response.
+        """
+
+        print("test_init_is_nothing")
+
+        steps = [{"step": "init", "tasks": [{"module": "tasks.win.open_file"},              # 0
+                                            {"module": "tasks.win.get_from_scene_empty_break_on_conditions"}]}, # 0, break here
+                 {"step": "main", "tasks": [{"module": "tasks.win.export_file"}]},          # skip
+                 {"step": "post", "tasks": [{"module": "tasks.win.export_file"}]}]          # skip
+
+        data = {"init": {"open_path": "somewhere"},
+                "post": {"name": "somewhere"}}  # data override from "get_from_scene"
+
+        self.puzzle.play(steps, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([0, 0], return_codes)
 
     def test_conditions_skip_and_break_on_exceptions_true(self):
         """
@@ -325,7 +354,7 @@ class PuzzleTest(unittest.TestCase):
 
 
         print("test_conditions_skip_and_force_true")
-        tasks = [{
+        steps = [{
                  "step": "main", "tasks": [
                           {"module": "tasks.win.rename_namespace", 
                            "conditions": [{"category": "chara"}],
@@ -340,7 +369,7 @@ class PuzzleTest(unittest.TestCase):
                          {"categery": "bg", "name": "bgB"}]       # 2 > skip
                }
        
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0, 0, 2, 2], return_codes)
@@ -355,7 +384,7 @@ class PuzzleTest(unittest.TestCase):
 
 
         print("test_break_on_exceptions_is_true_and_error_occur")
-        tasks = [{
+        steps = [{
                  "step": "main", 
                  "tasks": [
                           {"module": "tasks.win.rename_namespace_with_error", 
@@ -372,10 +401,30 @@ class PuzzleTest(unittest.TestCase):
                          {"categery": "bg", "name": "bgB"}]       
                }
        
-        self.puzzle.play(tasks, data)
+        self.puzzle.play(steps, data)
 
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([2, 2, 4], return_codes)
+
+    def test_add_location(self):
+        """
+        add sys_path to step
+        """
+        steps = [{
+                 "step": "main", 
+                 "sys_path": "{}/tasks/win/add_sys_path_test".format(module_path),
+                 "tasks": [
+                          {"module": "other_location"}
+                         ]
+                }]
+
+        # tasks will stop at bg category because of script error
+        data = {}
+       
+        self.puzzle.play(steps, data)
+
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        self.assertEqual([0], return_codes)  
 
 if __name__ == "__main__":
     unittest.main()

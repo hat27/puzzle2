@@ -101,7 +101,6 @@ class Details(object):
 
 class PzLogger(logging.Logger):
     super(logging.Logger)
-    details = Details()
     ui = None
 
     def __init__(
@@ -112,6 +111,7 @@ class PzLogger(logging.Logger):
         logging.Logger.__init__(self, *args, **kwargs)
         # with this pattern, it's rarely necessary to propagate the| error up to parent
         self.ui = kwargs.get("ui", None)
+        self.details = Details()
 
     def set_ui(self, ui):
         """
