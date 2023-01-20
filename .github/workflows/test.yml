@@ -42,7 +42,7 @@ jobs:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
 
   maya2022:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
