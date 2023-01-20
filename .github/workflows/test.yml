@@ -11,9 +11,9 @@ jobs:
     strategy:
       matrix:
         maya-version: 
-          - docker://mottosso/maya:2019
-          - docker://mottosso/maya:2020
-          - docker://mottosso/maya:2022
+          - "docker://mottosso/maya:2019"
+          - "docker://mottosso/maya:2020"
+          - "docker://mottosso/maya:2022"
 
     steps:
       - name: Checkout Code
