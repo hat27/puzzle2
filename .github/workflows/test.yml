@@ -6,15 +6,8 @@ on:
       - main
 
 jobs:
-  build:
+  maya2019:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: 
-          - 2019
-          - 2020
-          - 2022
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -22,10 +15,41 @@ jobs:
       - name: set env
         run: |
           echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
-
       - name: Run Unittests
-        uses: docker://mottosso/maya:${{ matrix.version }}
+        uses: docker://mottosso/maya:2019
+        env:
+          
+          TEMP: /github/workspace/tests
+        with:
+          args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
+
+  maya2020:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: set env
+        run: |
+          echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
+      - name: Run Unittests
+        uses: docker://mottosso/maya:2020
         env:
           TEMP: /github/workspace/tests
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
+
+  maya2022:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: set env
+        run: |
+          echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
+      - name: Run Unittests
+        uses: docker://mottosso/maya:2022
+        env:
+          TEMP: /github/workspace/tests
+        with:
