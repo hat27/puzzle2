@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        maya_version: [2019, 2020, 2022]
+        maya-version: [2019, 2020, 2022]
 
     steps:
       - name: Checkout Code
@@ -21,7 +21,7 @@ jobs:
           echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
 
       - name: Run Unittests
-        uses: docker://mottosso/maya:${{ maya_version }}
+        uses: docker://mottosso/maya:${{ matrix.maya-version }}
         env:
           TEMP: /github/workspace/tests
         with:
