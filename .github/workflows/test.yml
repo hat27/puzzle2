@@ -24,7 +24,7 @@ jobs:
           echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
 
       - name: Run Unittests
-        uses: docker://mottosso/maya:${{ matrix.maya-version }}
+        uses: ${{ docker://mottosso/maya: }}${{ matrix.maya-version }}
         env:
           TEMP: /github/workspace/tests
         with:
