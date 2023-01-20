@@ -2,7 +2,7 @@ name: mayaCI
 
 on:
   push:
-    branches_ignore:
+    branches-ignore:
       - master
 
 jobs:
