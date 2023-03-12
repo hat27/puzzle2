@@ -102,7 +102,7 @@ class Puzzle(object):
                         self.logger.debug("break: {}".format(step))
                         # self.logger.details.update_code(return_code)
                         return
-                
+
                     _execute_step(tasks=tasks,
                                   data=d,
                                   common=common,
@@ -132,7 +132,7 @@ class Puzzle(object):
                         self.break_ = True
                         self.logger.debug("break on exceptions")
                         break
-                
+
                     if response.get("break_on_conditions") == True:
                         self.break_ = True
                         self.logger.debug("break on conditions")
@@ -172,7 +172,7 @@ class Puzzle(object):
             try:
                 module_ = importlib.import_module(module_path)
                 reload(module_)
-            
+
             except BaseException:
                 error = traceback.format_exc()
                 self.logger.critical(error)
@@ -217,15 +217,15 @@ class Puzzle(object):
             """
             this special step can override data inside process
             if you want to grab some thing from scene, you can use this.
-            maybe this step will start from "open_file" task 
+            maybe this step will start from "open_file" task
             then "grab_something_from_scene" task for override data.
-            different from data_globals is this step can override loop data 
+            different from data_globals is this step can override loop data
             and it is not possible from using default data_globals flow.
 
             WARNING:
                 step data is list type.it will be replace for now.
-                if you want to set specific key, use common key to make it happen. 
-                
+                if you want to set specific key, use common key to make it happen.
+
             """
             now = datetime.datetime.now()
             self.logger.debug("- init start -")
@@ -234,18 +234,18 @@ class Puzzle(object):
                           data=data_set.get("init", {}),
                           common=common,
                           step="init")
-            
+
             for key, value in self.context.items():
                 if key.startswith("_") or key == "logger":
                     continue
                 if key in data_set:
-                    if isinstance(data_set[key], list):
+                    if isinstance(value, list):
                         data_set[key] = value
                     else:
                         data_set[key].update(value)
                 else:
                     data_set[key] = value
-            
+
             self.logger.info("- init takes: {} -\n\n".format(datetime.datetime.now() - now))
         common = data_set.get("common", {})
 
@@ -257,7 +257,7 @@ class Puzzle(object):
             if self.break_:
                 self.logger.debug("break: {}".format(step_name))
                 break
-        
+
             [_append_sys_path(l) for l in step.get("sys_path", "").split(";") if l != ""]
 
             now = datetime.datetime.now()
@@ -268,7 +268,7 @@ class Puzzle(object):
                           data=data_set[step_name],
                           common=common,
                           step=step_name)
-            
+
             self.logger.info("- {} takes: {}-\n".format(step_name, datetime.datetime.now() - now))
 
         if steps[-1]["step"] == "closure":
@@ -279,7 +279,7 @@ class Puzzle(object):
                           data=data_set.get("closure", {}),
                           common=common,
                           step="closure")
-            
+
             self.logger.info("-closure takes: {}-\n".format(datetime.datetime.now() - now))
 
         self.logger.info("- done: {} -\n\n".format(datetime.datetime.now() - inp))
