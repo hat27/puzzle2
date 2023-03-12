@@ -22,10 +22,13 @@ def get_command(version, **kwargs):
         return False
 
     puzzle_directory = kwargs["puzzle_directory"]
-    log_name = kwargs["log_name"]
+    job_path = kwargs["job_path"]
 
     cmd = '{} -command '.format(app_path)
     cmd += '"python(\\\"import sys;import os;sys.path.append(\\\\\\"{}\\\\\\");'.format(puzzle_directory)
-    cmd += 'from puzzle2.PuzzleBatch import PuzzleBatch;x=PuzzleBatch(\\\\\\"{}\\\\\\");'.format(log_name)
+    if "sys_path" in kwargs:
+        for path in [l for l in kwargs["sys_path"].split(";") if l != ""]:
+            cmd += 'sys.path.append(\\\\\\"{}\\\\\\");'.format(path)
+    cmd += 'import puzzle2.batch_kicker as batch_kicker;batch_kicker.main(\\\\\\"{}\\\\\\");'.format(job_path)
     cmd += 'x.start()\\\");'
     return cmd

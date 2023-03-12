@@ -35,18 +35,7 @@ format_version = 2
 
 _environ = {'any': {}}
 
-env_list = ["PUZZLE_DATA_PATH", 
-            "PUZZLE_ALL_TASKS_PATH",
-            "PUZZLE_LOGGER_NAME",
-            "PUZZLE_LOGGER_DIRECTORY",
-            "PUZZLE_TASK_KEYS",
-            "PUZZLE_APP",
-            "PUZZLE_DIRECTORY",
-            "PUZZLE_MODULE_DIRECTORY",
-            "PUZZLE_CONTEXT_PATH",
-            "PUZZLE_RESULT",
-            "PUZZLE_CLOSE_APP",
-            "PUZZLE_STANDALONE_PYTHON"]
+env_list = ["PUZZLE_JOB_PATH"]
 
 for env in env_list:
     if env in os.environ:

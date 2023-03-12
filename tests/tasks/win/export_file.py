@@ -19,7 +19,6 @@ from puzzle2.PzLog import PzLog
 
 def main(event={}, context={}):
     data = event.get("data", {})
-    task = event.get("task", {})
     update_context = {}
     logger = context.get("logger")    
     if not logger:

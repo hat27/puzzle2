@@ -23,9 +23,8 @@ def close_event():
 
 def get_command(**kwargs):
     def _get_app_path(program_path=None):
-        path = "C:/kanaban/Python27/Scripts/rez.exe"
-        return os.path.normpath(path)
-        # return "rez" if program_path is None else program_path
+        program_path = "rez"
+        return program_path
 
     def _get_addon(app):
         global ADDON_PATH

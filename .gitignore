@@ -2,3 +2,5 @@
 .idea/
 pipenv/
 src/puzzle.egg-info/
+tests/jobs/
+tests/_old/
