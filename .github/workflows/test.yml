@@ -18,8 +18,8 @@ jobs:
       - name: Run Unittests
         uses: docker://mottosso/maya:2019
         env:
-          
           TEMP: /github/workspace/tests
+
         with:
           args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
 

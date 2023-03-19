@@ -1,7 +1,7 @@
 #-*- coding: utf8 -*-
 
-__author__ = "Gou.Hattori"
-__version__ = "0.0.6"
+__author__ = ["Goh.Hattori", "Narimisu.Ozaki"]
+__version__ = "1.0.0"
 
 from . import pz_env
 from . import pz_config

@@ -178,9 +178,9 @@ def run_process(app, **kwargs):
         pz_config.save(kwargs["task_set_path"], kwargs["task_set"])
         kwargs["task_set_type"] = "single"
 
-    if isinstance(kwargs.get("data"), dict):
+    if isinstance(kwargs.get("data_set"), dict):
         kwargs["data_path"] = "{}/data.json".format(job_directory)
-        pz_config.save(kwargs["data_path"], kwargs["data"])
+        pz_config.save(kwargs["data_path"], kwargs["data_set"])
 
     env_data = {
                 "app": app,
@@ -190,7 +190,7 @@ def run_process(app, **kwargs):
                 "keys": kwargs.get("keys", ""),
                 "script_path": kwargs["script_path"],
                 "task_set": kwargs.get("task_set", False),
-                "data": kwargs.get("data", False),
+                "data_set": kwargs.get("data_set", False),
                 "module_directory_path": kwargs.get("module_directory_path", False),
                 "module_name": kwargs.get("module_name", False),
                 "module_path": kwargs.get("module_path", False),

@@ -23,10 +23,10 @@ formatter=simple_formatter
 args=(sys.stdout,)
 
 [handler_file_handler]
-class=handlers.TimedRotatingFileHandler
+class=FileHandler
 level=DEBUG
 formatter=simple_formatter
-args=('$SAVEFILE', "D")
+args=('$SAVEFILE', "a")
 
 [formatter_simple_formatter]
 format = %(asctime)-25s %(levelname)-10s %(module)-20s %(funcName)-25s line:%(lineno)-5s %(message)s
