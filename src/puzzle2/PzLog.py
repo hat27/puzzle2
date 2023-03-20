@@ -254,7 +254,7 @@ class PzLog(object):
             # print("log config path:", self.config_path)
             update_config = {}
             update_config["loggers"] = {"keys": "root, {}".format(self.name)}
-            update_config["handler_file_handler"] = {"args": "('{}', 'D')".format(self.log_path)}  # TimedRotatingFileHandler
+            update_config["handler_file_handler"] = {"args": "('{}', 'a')".format(self.log_path)}  # TimedRotatingFileHandler
 
             update_config.setdefault("handler_stream_handler", {})
             update_config.setdefault("logger_root", {})
