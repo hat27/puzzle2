@@ -1,3 +1,3 @@
-include log.template
-recursive-include addons *
-recursive-include plugins *
+include src/puzzle2/log.template
+recursive-include src/puzzle2/addons *
+recursive-include src/puzzle2/plugins *
