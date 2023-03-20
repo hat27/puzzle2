@@ -1,0 +1,3 @@
+include log.template
+recursive-include addons *
+recursive-include plugins *
