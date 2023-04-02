@@ -10,6 +10,7 @@ except BaseException:
     import traceback
     traceback.print_exc()
 
+
 def read(path):
     """
     :type path: read file (.json, .yml)
@@ -54,7 +55,9 @@ def save(path, data, tool_name="", category="", version="", extend_info={}):
                           "version": version},
                  "data": data}
 
-    info_data["info"].update(extend_info)
+    if extend_info:
+        info_data["info"].update(extend_info)
+
     if sys.version_info.major == 2:
         with codecs.open(path, "w") as f:
             if path.endswith(".yml"):
@@ -64,7 +67,10 @@ def save(path, data, tool_name="", category="", version="", extend_info={}):
     elif sys.version_info.major == 3:
         with codecs.open(path, "w", "utf8") as f:
             if path.endswith(".yml"):
-                yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
+                try:  # PyYaml 5.1 - Keep current order
+                    yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+                except BaseException:
+                    yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
             elif path.endswith(".json"):
                 json.dump(info_data, f, indent=4, ensure_ascii=False)
 
@@ -72,3 +78,15 @@ def save(path, data, tool_name="", category="", version="", extend_info={}):
 
     return False
 
+
+def create(path, file_data={}):
+    """
+    Create settings .yml or .json file from the file_data
+    """
+    info_data = file_data.get("info", {})
+    tool_name = info_data.get("name", "")
+    category = info_data.get("category", "")
+    version = info_data.get("version", "")
+    data = file_data.get("data", {})
+
+    return save(path, data, tool_name, category, version)
