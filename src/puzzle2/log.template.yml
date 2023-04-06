@@ -1,0 +1,25 @@
+data:
+  disable_existing_loggers: false
+  formatters:
+    simple_formatter:
+      datefmt: '%m-%d-%y %H:%M:%S'
+      format: '%(asctime)-25s %(levelname)-10s %(module)-20s %(funcName)-25s line:%(lineno)-5s
+        %(message)s'
+  handlers:
+    file_handler:
+      class: logging.FileHandler
+      filename: logfile.log
+      formatter: simple_formatter
+      level: DEBUG
+      mode: a
+    stream_handler:
+      class: logging.StreamHandler
+      formatter: simple_formatter
+      level: DEBUG
+      stream: ext://sys.stdout
+
+  version: 1
+info:
+  category: ''
+  name: {}
+  version: ''

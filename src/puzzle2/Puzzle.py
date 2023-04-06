@@ -49,7 +49,7 @@ class Puzzle(object):
         if "log_directory" in kwargs:
             del kwargs["log_directory"]
 
-        if not kwargs.get("logger", False):
+        if not isinstance(kwargs.get("logger", False), PzLog.PzLog):
             self.Log = PzLog.PzLog(name=self.name,
                                    log_directory=log_directory,
                                    **kwargs)
