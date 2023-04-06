@@ -5,7 +5,7 @@ import sys
 import datetime
 import platform
 
-TEMP_PATH = os.environ["TEMP"].split(";")[0].replace("\\", "/")
+TEMP_PATH = os.environ.get("TEMP") or os.environ.get("TMPDIR") or "/tmp"
 APP = False
 
 try:
