@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 
-sys.path.append(r"H:\projects\colorrd\repos\puzzle2\src")
 
 from puzzle2.PzLog import PzLog
 import puzzle2.pz_config as pz_config
