@@ -6,51 +6,21 @@ on:
       - main
 
 jobs:
-  maya2019:
+  tests:
     runs-on: ubuntu-latest
+    matrix: 
+      python-version: [2.7,3.7, 3.9]
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-      
-      - name: set env
-        run: |
-          echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
-      - name: Run Unittests
-        uses: docker://mottosso/maya:2019
-        env:
-          TEMP: /github/workspace/tests
-
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
         with:
-          args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
-
-  maya2020:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: set env
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
         run: |
-          echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
-      - name: Run Unittests
-        uses: docker://mottosso/maya:2020
-        env:
-          TEMP: /github/workspace/tests
-        with:
-          args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
-
-  maya2022:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: set env
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run unittests
         run: |
-          echo "PYTHONPATH=/github/workspace/src" >> $GITHUB_ENV
-      - name: Run Unittests
-        uses: docker://mottosso/maya:2022
-        env:
-          TEMP: /github/workspace/tests
-        with:
-          args: /usr/autodesk/maya/bin/mayapy -m unittest discover -s ./tests/src/win -v
+          python -m unittest discover -s ./tests/src/win -v

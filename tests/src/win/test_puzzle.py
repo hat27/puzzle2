@@ -426,5 +426,47 @@ class PuzzleTest(unittest.TestCase):
         return_codes = self.puzzle.logger.details.get_return_codes()
         self.assertEqual([0], return_codes)  
 
+
+    def test_step_in_step(self):
+        """
+        we can nest step in step.
+        """
+        steps = [
+                {"step": "pre", 
+                 "tasks": [
+                     {"module": "tasks.win.open_file"}
+                 ]},
+                 {
+                 "step": "main", 
+                 "sys_path": "{}/tasks/win/add_sys_path_test".format(module_path),
+                 "tasks": [
+                          {"step": "main.pre", 
+                           "tasks": [
+                                {"module": "tasks.win.append_reference"},
+                                {"module": "tasks.win.rename_namespace"},
+                                {"module": "tasks.win.import_file"}
+                           ]},
+                           {"module": "tasks.win.preview"}
+                         ]
+                }]
+
+
+        data = {"pre": {"open_path": "somewhere"}, # 1
+                "main": {
+                          "main.pre": [
+                                {"category": "chara", "name": "charaA", "path": "/charaA.ma"}, # 2,3,4
+                                {"category": "chara", "name": "charaB", "path": "/charaB.ma"}, # 5,6,7
+                                {"category": "chara", "name": "charaC", "path": "/charaC.ma"}, # 8,9,10
+                                {"category": "bg", "name": "BgA", "path": "/BgA.ma"} # 11,12,13
+                          ],
+                         "category": "chara", "path": "/test.mov"} # 14
+               }
+
+        self.puzzle.play(steps, data)
+        return_codes = self.puzzle.logger.details.get_return_codes()
+        import pprint
+        pprint.pprint(self.puzzle.context)
+
+        self.assertEqual([0] * 14, return_codes)  
 if __name__ == "__main__":
     unittest.main()

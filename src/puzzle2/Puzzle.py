@@ -68,6 +68,132 @@ class Puzzle(object):
             if task_directory not in sys.path:
                 sys.path.append(task_directory)
 
+    def execute_step(self, tasks, data, common, step):
+        """
+        when data is list, same tasks run for each.
+
+        response: {return_code: int, data_globals: dict}
+
+        return: {return_code: int, data_globals: dict}
+        """
+        if isinstance(data, list):
+            flg = True
+            if len(data) == 0 and len(common) > 0:
+                data = [common]
+            for i, d in enumerate(data):
+                if self.break_:
+                    # return_code = 3
+                    self.logger.debug("break: {}".format(step))
+                    # self.logger.details.update_code(return_code)
+                    return
+
+                self.execute_step(tasks=tasks,
+                                data=d,
+                                common=common,
+                                step=step)
+        else:
+            """
+            "common" is special keyword.
+            we can use them everywhere
+            """
+            temp_common = copy.deepcopy(common)
+            temp_common.update(data)
+            data = temp_common
+
+            for task in tasks:
+                if self.break_:
+                    self.logger.debug("break: {}".format(task.get("name")))
+                    return
+
+                if "step" in task:
+                    if task["step"] not in data:
+                        continue
+
+                    self.execute_step(tasks=task["tasks"], 
+                                      data=data.get(task["step"], {}), 
+                                      common=common, 
+                                      step=task["step"])
+
+                else:
+                    response = self.execute_task(task=task,
+                                                data=data
+                                                )
+
+                    # Rest of the pipeline tasks will be skipped when
+                    # 1. break_on_exceptions is set to TRUE
+                    # 2. Exceptions (return flags 1,3,4,5) are caught through return_code
+                    break_on_exceptions = task.get("break_on_exceptions", False)
+                    if response.get("return_code", 0) not in [0, 2] and break_on_exceptions:
+                        self.break_ = True
+                        self.logger.debug("break on exceptions")
+                        break
+
+                    if response.get("break_on_conditions") == True:
+                        self.break_ = True
+                        self.logger.debug("break on conditions")
+                        break
+
+    def execute_task(self, task, data):
+        module_path = task["module"]
+        task.setdefault("name", module_path.split(".")[-1])
+
+        # initialize details log
+        self.logger.details.set_name(task["name"])
+        self.logger.details.set_header(0, "successed: {}".format(task["name"]))
+        if "comment" in task and task["comment"] != "":
+            self.logger.details.add_detail(task["comment"])
+
+        self.logger.info("module: {}".format(module_path))
+        try:
+            module_ = importlib.import_module(module_path)
+            reload(module_)
+
+        except BaseException:
+            error = traceback.format_exc()
+            self.logger.critical(error)
+            self.logger.details.set_header(4, "import error: {}.py".format(module_path.split(".")[-1]))
+            self.logger.details.add_detail(error)
+            return {"return_code": 4}
+
+        inp = datetime.datetime.now()
+
+        try:
+            response = self.execute(task, data, module_)
+
+        except BaseException:
+            error = traceback.format_exc()
+            self.logger.critical(error)
+            self.logger.details.add_detail(error)
+            self.logger.details.set_header(4, "execute error: {}.py".format(module_path.split(".")[-1]))
+            return {"return_code": 4}
+
+        self.logger.info("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
+        if response is None:
+            response = {"return_code": 0}
+
+        self.logger.details.update_code(response["return_code"])
+        return response
+
+    def execute(self, task, data, module):
+        task = PzTask(module=module,
+                        task=task,
+                        data=data,
+                        context=self.context)
+
+        response = task.execute()  # {"return_code": A, "data_globals": B}
+
+        if "update_context" in response:
+            for key, value in response["update_context"].items():
+                if isinstance(value, dict):
+                    self.context.setdefault(key, {})
+                    self.context[key].update(value)
+                # elif isinstance(value, list):
+                #     self.context.setdefault(key, []).extend(value)
+                else:
+                    self.context[key] = value
+
+        return response
+
     def play(self, steps, data_set, default_context={}):
         """
          --------------------
@@ -84,121 +210,6 @@ class Puzzle(object):
             if os.path.normpath(path) not in [os.path.normpath(l) for l in sys.path]:
                 sys.path.append(os.path.normpath(path))
 
-        def _execute_step(tasks, data, common, step):
-            """
-            when data is list, same tasks run for each.
-
-            response: {return_code: int, data_globals: dict}
-
-            return: {return_code: int, data_globals: dict}
-            """
-            if isinstance(data, list):
-                flg = True
-                if len(data) == 0 and len(common) > 0:
-                    data = [common]
-                for i, d in enumerate(data):
-                    if self.break_:
-                        # return_code = 3
-                        self.logger.debug("break: {}".format(step))
-                        # self.logger.details.update_code(return_code)
-                        return
-
-                    _execute_step(tasks=tasks,
-                                  data=d,
-                                  common=common,
-                                  step=step)
-            else:
-                """
-                "common" is special keyword.
-                we can use them everywhere
-                """
-                temp_common = copy.deepcopy(common)
-                temp_common.update(data)
-                data = temp_common
-                for task in tasks:
-                    if self.break_:
-                        self.logger.debug("break: {}".format(task.get("name")))
-                        return
-
-                    response = _execute_task(task=task,
-                                             data=data
-                                             )
-
-                    # Rest of the pipeline tasks will be skipped when
-                    # 1. break_on_exceptions is set to TRUE
-                    # 2. Exceptions (return flags 1,3,4,5) are caught through return_code
-                    break_on_exceptions = task.get("break_on_exceptions", False)
-                    if response.get("return_code", 0) not in [0, 2] and break_on_exceptions:
-                        self.break_ = True
-                        self.logger.debug("break on exceptions")
-                        break
-
-                    if response.get("break_on_conditions") == True:
-                        self.break_ = True
-                        self.logger.debug("break on conditions")
-                        break
-
-        def _execute_task(task, data):
-            def _execute(task, data, module):
-                task = PzTask(module=module,
-                              task=task,
-                              data=data,
-                              context=self.context)
-
-                response = task.execute()  # {"return_code": A, "data_globals": B}
-
-                if "update_context" in response:
-                    for key, value in response["update_context"].items():
-                        if isinstance(value, dict):
-                            self.context.setdefault(key, {})
-                            self.context[key].update(value)
-                        # elif isinstance(value, list):
-                        #     self.context.setdefault(key, []).extend(value)
-                        else:
-                            self.context[key] = value
-
-                return response
-
-            module_path = task["module"]
-            task.setdefault("name", module_path.split(".")[-1])
-
-            # initialize details log
-            self.logger.details.set_name(task["name"])
-            self.logger.details.set_header(0, "successed: {}".format(task["name"]))
-            if "comment" in task and task["comment"] != "":
-                self.logger.details.add_detail(task["comment"])
-
-            self.logger.info("module: {}".format(module_path))
-            try:
-                module_ = importlib.import_module(module_path)
-                reload(module_)
-
-            except BaseException:
-                error = traceback.format_exc()
-                self.logger.critical(error)
-                self.logger.details.set_header(4, "import error: {}.py".format(module_path.split(".")[-1]))
-                self.logger.details.add_detail(error)
-                return {"return_code": 4}
-
-            inp = datetime.datetime.now()
-
-            try:
-                response = _execute(task, data, module_)
-
-            except BaseException:
-                error = traceback.format_exc()
-                self.logger.critical(error)
-                self.logger.details.add_detail(error)
-                self.logger.details.set_header(4, "execute error: {}.py".format(module_path.split(".")[-1]))
-                return {"return_code": 4}
-
-            self.logger.info("task takes: {}\n".format(datetime.datetime.now() - inp))  # TODO: Check?
-            if response is None:
-                response = {"return_code": 0}
-
-            self.logger.details.update_code(response["return_code"])
-
-            return response
 
         # initialize
         self.logger.details.clear()
@@ -230,7 +241,7 @@ class Puzzle(object):
             now = datetime.datetime.now()
             self.logger.debug("- init start -")
 
-            _execute_step(tasks=steps[0]["tasks"],
+            self.execute_step(tasks=steps[0]["tasks"],
                           data=data_set.get("init", {}),
                           common=common,
                           step="init")
@@ -264,7 +275,7 @@ class Puzzle(object):
             data_set.setdefault(step_name, {})
             self.logger.debug("- {} start - {}".format(step_name, step.get("comment", "")))
 
-            _execute_step(tasks=step["tasks"],
+            self.execute_step(tasks=step["tasks"],
                           data=data_set[step_name],
                           common=common,
                           step=step_name)
@@ -275,7 +286,7 @@ class Puzzle(object):
             self.break_ = False
             self.logger.debug("- closure start - {}".format(steps[-1].get("comment", "")))
             now = datetime.datetime.now()
-            _execute_step(tasks=steps[-1]["tasks"],
+            self.execute_step(tasks=steps[-1]["tasks"],
                           data=data_set.get("closure", {}),
                           common=common,
                           step="closure")
