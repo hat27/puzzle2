@@ -3,16 +3,13 @@
 import os
 import sys
 import copy
-
-if sys.version.startswith("2"):
-    import ConfigParser
-else:
-    import configparser
-
+import glob
+import datetime
 import logging.config
 from logging import getLogger, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 from . import pz_env as pz_env
+from . import pz_config as pz_config
 
 # CRITICAL = 50
 # ERROR = 40
@@ -208,101 +205,163 @@ class PzLog(object):
         and custom output functions for lighting up the UI of Puzzle and MayaBatcher.
 
         :param name: Log name
-        :param new: Remove previous handlers for self.name on init
+        :param new: If logger was already exists, Remove previous handlers for self.name on init
         :param kwargs:
         :param clear: Delete the previous log file
-        :param use_default_config: Reset log.template file
-        :param logger_level: Logger level
+        :param reset_template: Reset log.template file # old arg name is "set_default_config"
+        :param logger_level: Logger level. stream handler only. file handler is always DEBUG(or depends on log.template.yml)
         :param log_directory: Dir for log files
         :param log_filename: Filename excluding extension to be used for .log and .conf files
         :param template_file: Path to custom .template file to be used for logging config
+        :param ignore_namespace: ignore namespace to logger name.default logger is name.puzzle
+        :param max_log_count: Max number of log files to keep. default is 0 (no limit)
+        :param add_date_to_log_name: Add date to log file name. default is False
+        :param user_name: Add user to log file name. default is False
+
+        log_directory/log_filename.log
+        log_directory/config/log_filename.
+
         """
         if name is None:
             name = "unknown"
 
-        self.template = kwargs.get("template_file", pz_env.get_log_template())
+        template_path = kwargs.get("template_file", pz_env.get_log_template())
         self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory("Pzlog"))
-        self.name = name
-        self.filename = kwargs.get("log_filename", name)  # Filename for log and config files
-        self.log_path = "{}/{}.log".format(self.log_directory, self.filename)  # Log file path
-        self.config_path = "{}/config/{}.conf".format(self.log_directory, self.filename)  # Config file path
+        self.base_template_path = None
 
-        if new:
-            # Remove all existing handlers for self.name
-            self.remove_handlers()
-            kwargs["use_default_config"] = True
+        if kwargs.get("namespace", True):
+            self.name = "puzzle.{}".format(name)
+        else:
+            self.name = name
+
+        reset_template = kwargs.get("reset_template", False)
+        if "use_default_config" in kwargs:
+            # old arg name
+            reset_template = kwargs["use_default_config"]
+
+        handler_levels = {k.replace("_level", ""): v for (k, v) in kwargs.items() if k.endswith("_level")}
+
+        if self.name in self.get_loggers().keys():
+            if new:
+                self.remove_handlers()
+            else:
+                self.logger = logging.getLogger(self.name)
+                self.change_handler_levels(**handler_levels)
+                return
+
+        config_name = name
+        self.filename = kwargs.get("log_filename", name)  # Filename for log and config files
+        if kwargs.get("add_date_to_log_name", False):
+            self.filename = "{}_{}".format(datetime.datetime.now().strftime("%Y%m%d"), self.filename)
+            reset_template = True
+
+        user_name = kwargs.get("user_name", False)
+        if user_name:
+            f, ext = os.path.splitext(self.filename)
+            self.filename = "{}_{}{}".format(f, user_name, ext)
+            config_name = "{}_{}".format(config_name, user_name)
+
+        self.log_path = "{}/{}.log".format(self.log_directory, self.filename)  # Log file path
+        self.config_path = "{}/config/{}.json".format(self.log_directory, config_name)  # Config file path
 
         if kwargs.get("clear", False):
             # Delete previous log file if exists
             os.remove(self.log_path)
 
+        max_log_count = kwargs.get("max_log_count", 0)
+        if max_log_count > 0:
+            directory = os.path.dirname(self.log_path)
+            if os.path.exists(directory):
+                pattern_name = name
+                if user_name:
+                    pattern_name = "{}_{}".format(name, user_name)
+                if kwargs.get("add_date_to_log_name", False):
+                    pattern_name = "*_{}".format(pattern_name)
+                
+                pattern = "{}/{}.log".format(directory, pattern_name)
+                log_files = glob.glob(pattern)
+                log_files.sort(key=os.path.getmtime)
+                if len(log_files) > max_log_count:
+                    for log_file in log_files[:-max_log_count]:
+                        os.remove(log_file)
+
         self.removed = False
-        if kwargs.get("use_default_config", False):
+        if reset_template:
             # Reset logging config file if specified
             if os.path.exists(self.config_path):
                 try:
                     os.remove(self.config_path)
-                    # print("removed: {}".format(self.config_path))
                     self.removed = True
                 except BaseException:
-                    pass
-
+                    import traceback
+                    traceback.print_exc()
+        
         if not os.path.exists(self.config_path):
             # Create a new config file from the template config file
-            replace_text = {"$NAME": self.name}
-            self.create_log_config_file(replace_text)
-            # print("log config path:", self.config_path)
-            update_config = {}
-            update_config["loggers"] = {"keys": "root, {}".format(self.name)}
-            update_config["handler_file_handler"] = {"args": "('{}', 'a')".format(self.log_path)}  # TimedRotatingFileHandler
+            append_loggers = {
+                self.name: {
+                    "level": kwargs.get("logger_level", "DEBUG"),
+                    "handlers": kwargs.get("handlers", ["stream_handler", "file_handler"])
+                }
+            }
 
-            update_config.setdefault("handler_stream_handler", {})
-            update_config.setdefault("logger_root", {})
-            update_config.setdefault("logger_{}".format(self.name), {})
+            append_handers = {
+                "file_handler": {
+                    "filename": self.log_path
+                }
+            }
 
-            if "logger_level" in kwargs:
-                update_config["handler_stream_handler"]["level"] = kwargs["logger_level"].upper()
-                update_config["handler_file_handler"]["level"] = kwargs["logger_level"].upper()
+            self.base_template_path = template_path
+        else:
+            self.base_template_path = self.config_path
+            append_handers = {}
+            append_loggers = {}
 
-            if "stream_handler_level" in kwargs:
-                update_config["handler_stream_handler"]["level"] = kwargs["stream_handler_level"].upper()
+        config_data = self.create_log_config_file(append_handers, append_loggers)
 
-            if "file_handler_level" in kwargs:
-                update_config["handler_file_handler"]["level"] = kwargs["file_handler_level"].upper()
+        logging.config.dictConfig(config_data)
 
-            self.update_config_file(self.config_path, update_config)
-
-        # print("config file:", self.config_path)
-        logging.config.fileConfig(self.config_path)
         self.logger = getLogger(self.name)
-        # self.logger = PzLogger(self.name)
+        self.change_handler_levels(**handler_levels)
 
+        # check: propagate is always False
         self.logger.propagate = False
+    
+    def change_handler_levels(self, **kwargs):
+        for k, v in kwargs.items():
+            for handler in self.logger.handlers:
+                if handler.name == k:
+                    handler.setLevel(v)
+                    break
 
-    # TODO: Check - .templateファイル内の文字変数の置換はConfigParserのdefault機能で代替可能？
-    def create_log_config_file(self, replace_log_config):
-        """ Create a new log config file from the template file.
-        For any changes, use replace_log_config (key: new_val)
-        """
-        def _replace(w, replace_log_config_):
-            for k, v in replace_log_config_.items():
-                if k in w:
-                    return w.replace(k, v)
-            return w
+    def get_loggers(self):
+        return logging.Logger.manager.loggerDict
 
-        if not os.path.isdir(os.path.dirname(self.config_path)):
+    def create_log_config_file(self, handers={}, loggers={}):
+        if not os.path.isdir(os.path.dirname(self.base_template_path)):
             try:
-                os.makedirs(os.path.dirname(self.config_path))
+                os.makedirs(os.path.dirname(self.base_template_path))
             except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
-                if not os.path.isdir(os.path.dirname(self.config_path)):
+                if not os.path.isdir(os.path.dirname(self.base_template_path)):
                     raise
 
-        with open(self.template, "r") as tx:
-            tx_s = tx.read().split("\n")
-            tx = open(self.config_path, "w")
-            new = [_replace(l, replace_log_config) for l in tx_s]
-            tx.write("\n".join(new))
-            tx.close()
+        info, data = pz_config.read(self.base_template_path)
+
+        data.setdefault("handlers", {})
+        for k, v in handers.items():
+            for k2, v2 in v.items():
+                data["handlers"].setdefault(k, {})
+                data["handlers"][k][k2] = v2
+
+        data.setdefault("loggers", {})
+        for k, v in loggers.items():
+            for k2, v2 in v.items():
+                data["loggers"].setdefault(k, {})
+                data["loggers"][k][k2] = v2
+
+        pz_config.save(self.config_path, data, "pzLog", "template")
+
+        return data
 
     def remove_handlers(self):
         """ Remove all handlers attached to self.name
@@ -316,30 +375,3 @@ class PzLog(object):
                 self.logger.removeHandler(handler)
             except BaseException:
                 pass
-
-    def update_config_file(self, config_path, update_config):
-        """ Update a logging config file located at config_path
-            for keys/vals in update_config dict.
-        """
-        if sys.version.startswith("2"):
-            ini = ConfigParser.RawConfigParser()  # Use RawConfigParser when accessing line with %(var)s
-            ini.read(config_path)
-
-            for k, v in update_config.items():
-                if k in ini.sections():
-                    for k2, v2 in v.items():
-                        if ini.get(k, k2):
-                            ini.set(k, k2, v2)
-        else:
-            ini = configparser.RawConfigParser()
-            ini.read(config_path, "utf-8")
-
-            for k, v in update_config.items():
-                if k in ini:
-                    for k2, v2 in v.items():
-                        if k2 in ini[k]:
-                            ini[k][k2] = v2
-
-        # print(config_path)
-        with open(config_path, "w") as f:
-            ini.write(f)
