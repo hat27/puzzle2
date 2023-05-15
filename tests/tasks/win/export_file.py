@@ -24,9 +24,7 @@ def main(event={}, context={}):
     if not logger:
         logger = PzLog().logger
 
-
     return_code = 0
-
     logger.debug("export: {}".format(data["name"]))
     logger.details.add_detail("test details")
 

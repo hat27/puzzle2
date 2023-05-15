@@ -10,5 +10,5 @@ def main(event={}, context={}):
     return {"return_code": 0}
 
 if __name__ == "__main__":
-    event = {"data": {"add": 1}}
+    event = {"data": {"add": 1, "path": "C:/"}}
     main(event)
