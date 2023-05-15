@@ -51,10 +51,12 @@ class Details(object):
                                    "header": text}
     
     def set_data_required(self, required):
-        self._meta_data[self.name]["required"] = required
+        if self.name in self._meta_data:
+            self._meta_data[self.name]["required"] = required
 
     def set_execution_time(self, execution_time):
-        self._meta_data[self.name]["execution_time"] = execution_time
+        if self.name in self._meta_data:
+            self._meta_data[self.name]["execution_time"] = execution_time
 
     def update_code(self, return_code):
         self._header[self.name]["return_code"] = return_code
