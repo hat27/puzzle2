@@ -62,6 +62,9 @@ class PzLogUseExistsTemplate(unittest.TestCase):
             if handler.name == "stream_handler":
                 self.assertEqual(handler.level, logging.CRITICAL)
 
+    def tearDown(self):
+        self.pz_logA.remove_handlers()
+        self.pz_logB.remove_handlers()
 
 class PzLogUseExistsTemplateAddingDateToLogName(unittest.TestCase):
     def setUp(self):
@@ -84,6 +87,9 @@ class PzLogUseExistsTemplateAddingDateToLogName(unittest.TestCase):
             if handler.name == "stream_handler":
                 self.assertEqual(handler.level, logging.DEBUG)
 
+    def tearDown(self):
+        self.pz_logA.remove_handlers()
+        self.pz_logB.remove_handlers()
 
 class PzLogUtility(unittest.TestCase):
     def test_check_log_file_name(self):
@@ -110,7 +116,10 @@ class PzLogUtility(unittest.TestCase):
 
         for handler in self.pz_logA.logger.handlers:
             self.assertEqual(handler.level, logging.CRITICAL)
-        
+
+    def tearDown(self):
+        self.pz_logA.remove_handlers()
+
 
 class PzLogDetail(unittest.TestCase):
     def setUp(self):
@@ -157,6 +166,8 @@ class PzLogDetail(unittest.TestCase):
         self.assertEqual(self.logger.details.get_header(), [])
         self.assertEqual(self.logger.details.get_details(), [])
 
+    def tearDown(self):
+        self.pz_logA.remove_handlers()
 
 if __name__ == "__main__":
     unittest.main()
