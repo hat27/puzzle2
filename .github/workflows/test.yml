@@ -28,5 +28,4 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/src      
         run: |
-          python -m unittest ./tests/src/win/test_puzzle.py
-          python -m unittest ./tests/src/win/test_PzTask.py
+          python -m unittest discover -s ./tests/src/win
