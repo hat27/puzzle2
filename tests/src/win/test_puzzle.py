@@ -8,13 +8,13 @@ module_path = os.path.normpath(os.path.join(__file__, "../../../"))
 sys.path.append(module_path)
 
 # set debug if you want to see log detail
-LOGGER_LEVEL = "critical"
+LOGGER_LEVEL = "DEBUG"
 
 
 class PuzzleTestAndTutorial(unittest.TestCase):
     def setUp(self):
         print("")
-        self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True)
+        self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True, reset_template=True)
 
     def test_simple(self):
         """
@@ -232,13 +232,10 @@ class PuzzleTestAndTutorial(unittest.TestCase):
         self.puzzle.play(steps, data)
         self.assertEqual(self.puzzle.context["add_specified_data.add"], 100)
 
-
-
-
 class PuzzleTest(unittest.TestCase):
     def setUp(self):
         print("")
-        self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True)
+        self.puzzle = Puzzle(logger_level=LOGGER_LEVEL, new=True, reset_template=True)
 
     def test_skip_flow(self):
         """
@@ -468,5 +465,7 @@ class PuzzleTest(unittest.TestCase):
         pprint.pprint(self.puzzle.context)
 
         self.assertEqual([0] * 14, return_codes)  
+
+
 if __name__ == "__main__":
     unittest.main()

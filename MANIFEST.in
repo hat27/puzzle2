@@ -1,3 +1,4 @@
 include src/puzzle2/log.template
+include src/puzzle2/log.template.yml
 recursive-include src/puzzle2/addons *
 recursive-include src/puzzle2/plugins *

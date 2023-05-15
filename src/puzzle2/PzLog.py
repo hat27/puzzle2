@@ -32,6 +32,7 @@ class Details(object):
     def __init__(self):
         self._header = {}
         self._details = {}
+        self._meta_data = {}
         self.order = []
         self.index = 0
         self.name = ""
@@ -39,7 +40,7 @@ class Details(object):
     def set_name(self, name):
         self.name = "{} {}".format(self.index, name)
         self.order.append(self.name)
-
+        self._meta_data[self.name] = {}
         self.index += 1
 
     def add_detail(self, text):
@@ -48,10 +49,18 @@ class Details(object):
     def set_header(self, return_code, text):
         self._header[self.name] = {"return_code": return_code,
                                    "header": text}
+    
+    def set_data_required(self, required):
+        if self.name in self._meta_data:
+            self._meta_data[self.name]["required"] = required
+
+    def set_execution_time(self, execution_time):
+        if self.name in self._meta_data:
+            self._meta_data[self.name]["execution_time"] = execution_time
 
     def update_code(self, return_code):
         self._header[self.name]["return_code"] = return_code
-
+    
     def get_header(self):
         return [self._header.get(name, name) for name in self.order]
 
@@ -81,6 +90,9 @@ class Details(object):
 
             if name in self._details:
                 data["details"] = self._details[name]
+            
+            if name in self._meta_data:
+                data["meta_data"] = self._meta_data[name]
 
             all_.append(data)
 
@@ -89,6 +101,8 @@ class Details(object):
     def clear(self):
         self._header = {}
         self._details = {}
+        self._data_required = {}
+        self._execution_time = {}
         self.order = []
         self.name = ""
         self.index = 0
@@ -344,7 +358,6 @@ class PzLog(object):
             except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
                 if not os.path.isdir(os.path.dirname(self.base_template_path)):
                     raise
-
         info, data = pz_config.read(self.base_template_path)
 
         data.setdefault("handlers", {})
@@ -375,3 +388,6 @@ class PzLog(object):
                 self.logger.removeHandler(handler)
             except BaseException:
                 pass
+    
+    def __del__(self):
+        self.remove_handlers()

@@ -116,9 +116,10 @@ class PzLogUtility(unittest.TestCase):
 
         for handler in self.pz_logA.logger.handlers:
             self.assertEqual(handler.level, logging.CRITICAL)
-        
+
     def tearDown(self):
         self.pz_logA.remove_handlers()
+
 
 class PzLogDetail(unittest.TestCase):
     def setUp(self):
@@ -139,19 +140,26 @@ class PzLogDetail(unittest.TestCase):
         self.logger.details.add_detail("test4")
         self.logger.details.add_detail("test5")
         self.logger.details.add_detail("test6")
-        self.logger.details.set_header(1, "secound task") 
+        self.logger.details.set_header(1, "secound task")
 
         self.assertEqual(self.logger.details.get_details(name1), ["test1", "test2", "test3"])
         self.assertEqual(self.logger.details.get_details(name2), ["test4", "test5", "test6"])
 
         self.assertEqual(self.logger.details.get_details(), [["test1", "test2", "test3"], 
                                                              ["test4", "test5", "test6"]])
-        
+
         self.assertEqual(self.logger.details.get_return_codes(), [0, 1])
 
-        self.assertEqual(self.logger.details.get_all(), [{"return_code": 0, "header": "first task", "details": ["test1", "test2", "test3"]},
-                                                         {"return_code": 1, "header": "secound task", "details": ["test4", "test5", "test6"]}])
-
+        self.assertEqual(self.logger.details.get_all(), [{"return_code": 0, 
+                                                          "header": "first task", 
+                                                          "details": ["test1", "test2", "test3"], 
+                                                          "meta_data": {}
+                                                          },
+                                                         {"return_code": 1, 
+                                                          "header": "secound task", 
+                                                          "details": ["test4", "test5", "test6"],
+                                                          "meta_data": {}}
+                                                          ])
 
         self.logger.details.clear()
        

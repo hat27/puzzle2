@@ -8,11 +8,14 @@ def main(event={}, context={}):
     logger = context.get("logger")
     if not logger:
         logger = PzLog().logger
-
+    data = event["data"]
     update_context = {}
-    return {"return_code": 0, "update_context": update_context, "break_on_conditions": True}
+    return {"return_code": data.get("return_code", 0), "update_context": update_context, "break_on_conditions": True}
 
 
 if __name__ == "__main__":
     event = {"data": {"open_path": "A"}}
     print(main(event))
+
+    import doctest
+    doctest.testmod()

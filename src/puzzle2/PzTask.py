@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 
 import copy
+import time
 import traceback
 
 from . import PzLog
@@ -107,6 +108,7 @@ class PzTask(object):
             self.context = context_data
 
         response = {}
+        start_time = time.time()
         if self.skip:
             self.logger.debug("task skipped")
             self.logger.details.set_header(self.return_code, "skipped: {}".format(self.name))
@@ -120,5 +122,14 @@ class PzTask(object):
 
         response.setdefault("return_code", self.return_code)
         self.logger.debug("return_code: {}".format(response["return_code"]))
+        self.logger.details.set_execution_time(time.time() - start_time)
+
+        if hasattr(self.module, "DATA_KEY_REQUIRED"):
+            required = {}
+            for key in self.module.DATA_KEY_REQUIRED:
+                if key in self.data:
+                    if key in self.data:
+                        required[key] = self.data[key]
+            self.logger.details.set_data_required(required)
 
         return response
