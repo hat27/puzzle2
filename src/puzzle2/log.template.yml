@@ -15,9 +15,8 @@ data:
     stream_handler:
       class: logging.StreamHandler
       formatter: simple_formatter
-      level: DEBUG
+      level: CRITICAL
       stream: ext://sys.stdout
-
   version: 1
 info:
   category: ''

@@ -15,6 +15,10 @@ def get_command(**kwargs):
     script_path = kwargs["script_path"]
     app_path = _get_app_path(version, kwargs.get("program_directory", None))
 
+    # Verify executable exists
+    if not os.path.exists(app_path):
+        return False
+
     if "launcher" in kwargs:
         return r' -suspendMessages -g 50 50 "{}"'.format(app_path, script_path)
     else:

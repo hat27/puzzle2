@@ -13,10 +13,12 @@ def get_command(**kwargs):
     version = kwargs.get("version", "")
     script_path = kwargs.get("script_path", "")
     app_path = _get_app_path(version, kwargs.get("program_directory", None))
-    if not app_path:
+    if not app_path or not os.path.exists(app_path):
         return False
 
+    # Keep API consistent with other addons: return a quoted string command
     if "launcher" in kwargs:
         return r'"{}"'.format(script_path)
     else:
+        print(r'mayapy::: "{}" "{}"'.format(app_path, script_path))
         return r'"{}" "{}"'.format(app_path, script_path)
