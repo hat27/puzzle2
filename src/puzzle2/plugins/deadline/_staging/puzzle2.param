@@ -1,0 +1,33 @@
+[About]
+Type=label
+Label=About
+Category=About Plugin
+CategoryOrder=-1
+Default=Puzzle2 Plugin for Deadline (new scaffold)
+Description=Executes puzzle2 batch_kicker with DCC executables from Application Plugin.
+
+[UseAppPluginPath]
+Type=boolean
+Label=Use Application Plugin Executable
+Default=True
+Description=Overlay addon-built command with the executable resolved from the Application Plugin.
+
+[PuzzleDirectory]
+Type=Folder
+Label=Puzzle2 Directory
+Description=Path to 'src' containing the puzzle2 package.
+
+[TaskDirectory]
+Type=Folder
+Label=Task Module Directory
+Description=Additional module directory (e.g., tests) added to sys.path.
+
+[YamlDirectory]
+Type=Folder
+Label=YAML Directory
+Description=Optional: Directory that contains 'yaml' module if not installed system-wide.
+
+[JobDirectory]
+Type=Folder
+Label=Job Output Directory
+Description=Where per-job folders are created (config.json/results).
