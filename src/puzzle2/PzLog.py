@@ -42,6 +42,7 @@ class Details(object):
         self.order.append(self.name)
         self._meta_data[self.name] = {}
         self.index += 1
+        return self.index - 1, self.name
 
     def add_detail(self, text):
         self._details.setdefault(self.name, []).append(text)
@@ -50,6 +51,10 @@ class Details(object):
         self._header[self.name] = {"return_code": return_code,
                                    "header": text}
     
+    def set_data_location(self, location):
+        if self.name in self._meta_data:
+            self._meta_data[self.name]["location"] = location
+
     def set_data_required(self, required):
         if self.name in self._meta_data:
             self._meta_data[self.name]["required"] = required
@@ -71,13 +76,13 @@ class Details(object):
 
         return codes
 
-    def get_details(self, key=None):
-        if key:
-            return self._details[key]
-        else:
-            details = []
-            for name in self.order:
-                details.append(self._details[name])
+    def get_details(self, name):
+        data = copy.deepcopy(self._header[name])
+        if name in self._details:
+            data["details"] = self._details[name]
+        if name in self._meta_data:
+            data["meta_data"] = self._meta_data[name]
+        return data
 
         return details
 
@@ -97,6 +102,21 @@ class Details(object):
             all_.append(data)
 
         return all_
+    
+    def add_data_set(self, headers, results, location):
+        for header, result in zip(headers, results):
+            self.add_data(header, result, location)
+    
+    def add_data(self, header, result, location={}):
+        header_name = " ".join(header.split(" ")[1:])
+        self.set_name(header_name)
+        self.set_header(result["return_code"], result["header"])
+        for detail in result.get("details", []):
+            self.add_detail(detail)
+        
+        self.set_data_required(result.get("meta_data", {}).get("required", {}))
+        self.set_execution_time(result.get("meta_data", {}).get("execution_time", 0.0))
+        self.set_data_location(location)
 
     def clear(self):
         self._header = {}
@@ -206,9 +226,8 @@ class PzLogger(logging.Logger):
             self.update_ui(msg, "debug", **kwargs)
 
 
-# Set PzLogger as the default Class to be called when using getLogger()
-logging.setLoggerClass(PzLogger)
-
+# Note: Avoid setting a global LoggerClass to prevent process-wide side effects.
+# If you need a PzLogger instance, PzLog will construct one locally.
 # log.success('Hello World')
 
 
@@ -240,6 +259,14 @@ class PzLog(object):
             name = "unknown"
 
         template_path = kwargs.get("template_file", pz_env.get_log_template())
+        # If YAML isn't available but a YAML template was chosen, switch to JSON template
+        try:
+            from . import pz_config as _pz_config
+            if template_path.endswith('.yml') and (not getattr(_pz_config, 'YAML_AVAILABLE', False)):
+                template_path = pz_env.get_log_template_json()
+        except BaseException:
+            pass
+
         self.log_directory = kwargs.get("log_directory", pz_env.get_log_directory("Pzlog"))
         self.base_template_path = None
 
@@ -254,7 +281,6 @@ class PzLog(object):
             reset_template = kwargs["use_default_config"]
 
         handler_levels = {k.replace("_level", ""): v for (k, v) in kwargs.items() if k.endswith("_level")}
-
         if self.name in self.get_loggers().keys():
             if new:
                 self.remove_handlers()
@@ -280,7 +306,8 @@ class PzLog(object):
 
         if kwargs.get("clear", False):
             # Delete previous log file if exists
-            os.remove(self.log_path)
+            if os.path.exists(self.log_path):
+                os.remove(self.log_path)
 
         max_log_count = kwargs.get("max_log_count", 0)
         if max_log_count > 0:
@@ -309,7 +336,7 @@ class PzLog(object):
                 except BaseException:
                     import traceback
                     traceback.print_exc()
-        
+
         if not os.path.exists(self.config_path):
             # Create a new config file from the template config file
             append_loggers = {
@@ -325,6 +352,7 @@ class PzLog(object):
                 }
             }
 
+            # Use the selected base template path (YAML or JSON depending on availability)
             self.base_template_path = template_path
         else:
             self.base_template_path = self.config_path
@@ -333,9 +361,8 @@ class PzLog(object):
 
         config_data = self.create_log_config_file(append_handers, append_loggers)
 
-        logging.config.dictConfig(config_data)
-
-        self.logger = getLogger(self.name)
+        # Build a scoped logger from config without applying global dictConfig
+        self.logger = self._build_logger_from_config(config_data)
         self.change_handler_levels(**handler_levels)
 
         # check: propagate is always False
@@ -352,12 +379,7 @@ class PzLog(object):
         return logging.Logger.manager.loggerDict
 
     def create_log_config_file(self, handers={}, loggers={}):
-        if not os.path.isdir(os.path.dirname(self.base_template_path)):
-            try:
-                os.makedirs(os.path.dirname(self.base_template_path))
-            except BaseException:  # Dir is created between the os.path.isdir and the os.makedirs calls
-                if not os.path.isdir(os.path.dirname(self.base_template_path)):
-                    raise
+        # Read template (do not create template directory)
         info, data = pz_config.read(self.base_template_path)
 
         data.setdefault("handlers", {})
@@ -375,6 +397,115 @@ class PzLog(object):
         pz_config.save(self.config_path, data, "pzLog", "template")
 
         return data
+
+    def _build_logger_from_config(self, config_data):
+        """
+        Build and configure only this logger from the given config dict
+        without applying global logging.config.dictConfig.
+        Supports the common fields used by puzzle templates
+        (formatters, stream_handler, file_handler, levels, handlers list).
+        """
+        # Resolve target logger config (fallback to root-like defaults if missing)
+        logger_name = self.name
+        loggers_cfg = config_data.get("loggers", {})
+        logger_cfg = loggers_cfg.get(logger_name, {})
+
+        # Create or get a PzLogger instance without changing the global LoggerClass
+        mgr = logging.Logger.manager
+        existing = mgr.loggerDict.get(logger_name)
+        if isinstance(existing, PzLogger):
+            logger = existing
+        else:
+            logger = PzLogger(logger_name)
+            mgr.loggerDict[logger_name] = logger
+
+        # Ensure directory for file handler exists when needed
+        def _ensure_dir(path):
+            d = os.path.dirname(path)
+            if d and not os.path.isdir(d):
+                try:
+                    os.makedirs(d)
+                except BaseException:
+                    if not os.path.isdir(d):
+                        raise
+
+        # Build formatters
+        fmts_cfg = config_data.get("formatters", {})
+        formatters = {}
+        for fname, fcfg in fmts_cfg.items():
+            fmt = fcfg.get("format")
+            datefmt = fcfg.get("datefmt")
+            try:
+                formatters[fname] = logging.Formatter(fmt=fmt, datefmt=datefmt)
+            except Exception:
+                # Fallback minimal formatter
+                formatters[fname] = logging.Formatter(fmt)
+
+        # Build handlers registry but only instantiate those referenced by our logger
+        wanted_handlers = logger_cfg.get("handlers") or []
+        handlers_cfg = config_data.get("handlers", {})
+        built_handlers = {}
+        for hname in wanted_handlers:
+            hcfg = handlers_cfg.get(hname)
+            if not hcfg:
+                continue
+            hclass = hcfg.get("class", "")
+            level = hcfg.get("level", "DEBUG")
+            formatter_name = hcfg.get("formatter")
+
+            handler = None
+            if hclass.endswith("StreamHandler"):
+                stream_target = hcfg.get("stream", "ext://sys.stdout")
+                stream = sys.stdout if "stdout" in stream_target else sys.stderr
+                handler = logging.StreamHandler(stream)
+            elif hclass.endswith("FileHandler"):
+                filename = hcfg.get("filename", self.log_path)
+                mode = hcfg.get("mode", "a")
+                _ensure_dir(filename)
+                handler = logging.FileHandler(filename, mode=mode, encoding="utf-8")
+
+            if handler is None:
+                # Unsupported handler class; skip quietly to avoid global changes
+                continue
+
+            # Name the handler so change_handler_levels can find it
+            try:
+                handler.set_name(hname)
+            except AttributeError:
+                handler.name = hname  # older Python fallback
+
+            # Level and formatter
+            try:
+                handler.setLevel(getattr(logging, level.upper(), logging.DEBUG))
+            except Exception:
+                handler.setLevel(logging.DEBUG)
+
+            if formatter_name and formatter_name in formatters:
+                handler.setFormatter(formatters[formatter_name])
+
+            built_handlers[hname] = handler
+
+        # Apply handlers to logger (reset if we've removed template previously or asked new=True upstream)
+        # Remove only handlers attached to this logger instance
+        for h in list(logger.handlers):
+            try:
+                logger.removeHandler(h)
+            except Exception:
+                pass
+
+        for hname in wanted_handlers:
+            if hname in built_handlers:
+                logger.addHandler(built_handlers[hname])
+
+        # Level and propagate
+        level_name = logger_cfg.get("level", "DEBUG")
+        try:
+            logger.setLevel(getattr(logging, level_name.upper(), logging.DEBUG))
+        except Exception:
+            logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+
+        return logger
 
     def remove_handlers(self):
         """ Remove all handlers attached to self.name
