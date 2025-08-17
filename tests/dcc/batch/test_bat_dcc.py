@@ -38,5 +38,5 @@ def test_generate_bat_for_maya_2024(tmp_path):
     run_process(app, **cmd)
     assert bat_path.exists()
     text = bat_path.read_text(encoding="utf-8", errors="ignore")
-    # バッチ内にPUZZLE_JOB_PATHとmaya.exe起動コマンドが含まれることを軽く検査
+    # Basic check: the batch should contain PUZZLE_JOB_PATH and a maya.exe launch command
     assert "PUZZLE_JOB_PATH" in text

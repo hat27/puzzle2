@@ -127,7 +127,7 @@ class Details(object):
         self.name = ""
         self.index = 0
 
-# TODO: 将来的にPzLoggerとPzLogを統合する事を検討
+# TODO: Consider merging PzLogger and PzLog in the future
 
 
 class PzLogger(logging.Logger):
