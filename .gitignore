@@ -4,3 +4,9 @@ pipenv/
 src/puzzle.egg-info/
 tests/jobs/
 tests/_old/
+tests/tests_data/jobs/*
+tests/tests_data/jobs_local/*
+src/puzzle2/plugins/deadline_old/*
+docs/*
+src/puzzle2.egg-info/*
+.coverage
