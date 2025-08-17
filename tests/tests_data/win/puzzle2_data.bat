@@ -1,0 +1,2 @@
+SET PUZZLE_JOB_PATH=H:\projects\colorrd\repos\puzzle2\tests\jobs/20221218194708/config.json
+"C:/Program Files/Autodesk/Maya2020/bin/mayapy.exe" "H:\projects\colorrd\repos\puzzle2\src\puzzle2\batch_kicker.py"

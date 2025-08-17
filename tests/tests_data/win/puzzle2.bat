@@ -1,0 +1,2 @@
+SET PUZZLE_JOB_PATH=C:/Users/Hattori/AppData/Local/Temp/puzzle/jobs/20250817072814/config.json
+C:/Program Files/Autodesk/Maya2024/bin/maya.exe -batch -command "python(\"import sys;import os;sys.path.append(\\\"H:/projects/colorrd/repos/puzzle2/src\\\");import puzzle2.batch_kicker as batch_kicker;batch_kicker.main(\\\"C:/Users/Hattori/AppData/Local/Temp/puzzle/jobs/20250817072814/config.json\\\");");

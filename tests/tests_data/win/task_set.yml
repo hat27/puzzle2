@@ -1,0 +1,11 @@
+info: {}
+data:
+  - step: pre
+    tasks: 
+      - name: open
+        module: tasks.win.open_file
+
+  - step: main
+    tasks: 
+        - name: export
+          module: tasks.win.export_file

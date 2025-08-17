@@ -1,0 +1,10 @@
+{
+  "info": {}, 
+  "data": {"pre": 
+              {
+                "open_path": "file path"
+              },
+           "main": 
+              [{"name": "nameA"}, {"name": "nameB"}]
+  }
+}
