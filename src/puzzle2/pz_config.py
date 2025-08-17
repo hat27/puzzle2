@@ -4,11 +4,16 @@ import os
 import json
 import codecs
 
+YAML_AVAILABLE = False
 try:
-    import yaml
+    import yaml  # type: ignore
+    YAML_AVAILABLE = True
 except BaseException:
-    import traceback
-    traceback.print_exc()
+    yaml = None  # Fallback when PyYAML is not available
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, o):
+        return str(o)
 
 def read(path):
     """
@@ -20,13 +25,19 @@ def read(path):
     if sys.version_info.major == 2:
         with codecs.open(path, "r") as f:
             if path.endswith(".yml"):
-                data = yaml.load(f, Loader=yaml.SafeLoader)
+                if YAML_AVAILABLE and yaml is not None:
+                    data = yaml.load(f, Loader=yaml.SafeLoader)
+                else:
+                    raise RuntimeError("YAML support is not available; cannot read .yml: {}".format(path))
             elif path.endswith(".json"):
                 data = json.load(f, "utf8")
     else:
         with codecs.open(path, "r", "utf8") as f:
             if path.endswith(".yml"):
-                data = yaml.load(f, Loader=yaml.SafeLoader)
+                if YAML_AVAILABLE and yaml is not None:
+                    data = yaml.load(f, Loader=yaml.SafeLoader)
+                else:
+                    raise RuntimeError("YAML support is not available; cannot read .yml: {}".format(path))
             elif path.endswith(".json"):
                 data = json.load(f)
 
@@ -58,15 +69,19 @@ def save(path, data, tool_name="", category="", version="", extend_info={}):
     if sys.version_info.major == 2:
         with codecs.open(path, "w") as f:
             if path.endswith(".yml"):
+                if not YAML_AVAILABLE or yaml is None:
+                    raise RuntimeError("YAML support is not available; cannot write .yml: {}".format(path))
                 yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
             elif path.endswith(".json"):
-                json.dump(info_data, f, indent=4, ensure_ascii=False)
+                json.dump(info_data, f, indent=4, ensure_ascii=False, cls=CustomEncoder)
     elif sys.version_info.major == 3:
         with codecs.open(path, "w", "utf8") as f:
             if path.endswith(".yml"):
+                if not YAML_AVAILABLE or yaml is None:
+                    raise RuntimeError("YAML support is not available; cannot write .yml: {}".format(path))
                 yaml.dump(info_data, f, default_flow_style=False, allow_unicode=True)
             elif path.endswith(".json"):
-                json.dump(info_data, f, indent=4, ensure_ascii=False)
+                json.dump(info_data, f, indent=4, ensure_ascii=False, cls=CustomEncoder)
 
         return True
 
