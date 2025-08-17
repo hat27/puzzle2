@@ -1,0 +1,64 @@
+info: {}
+data:
+  convert_test:
+    - step: init
+      tasks:
+        - name: mobu_create_cubes
+          module: tasks.mobu.init_create_cubes
+
+    - step: pre
+      tasks:
+        - module: tasks.mobu.plot_all
+
+    - step: main
+      tasks:
+        - module: tasks.mobu.export_file
+          data_key_replace:
+            export_path: export_fbx_path
+
+    - step: pipe
+      pipe:
+        app: mayapy
+        version: 2024
+      sys_path: ""
+      tasks:
+        - step: pre
+          tasks:
+            - module: tasks.maya.create_cube
+              data_defaults:
+                name: model
+        - step: main
+          tasks:
+            - module: tasks.maya.open_file
+              data_defaults:
+                new: true
+
+            - name: import_animation
+              module: tasks.maya.import_animation
+              data_key_replace:
+                asset_path: context.create_cube.asset_path
+                fbx_path: export_fbx_path
+                save_path: asset_save_path
+
+        - step: new
+          tasks:
+            - module: tasks.maya.open_file
+              data_defaults:
+                new: true
+
+        - step: main
+          tasks:
+            - module: tasks.maya.import_file
+              data_key_replace:
+                import_path: asset_save_path
+
+        - step: post
+          tasks:
+            - module: tasks.maya.save_file
+            - module: tasks.maya.playblast
+
+    - step: post
+      tasks:
+        - module: tasks.win.update_shotgrid
+          data_key_replace:
+            movie_path: mov_path

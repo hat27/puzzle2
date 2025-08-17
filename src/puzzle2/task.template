@@ -1,0 +1,31 @@
+
+
+
+# RETURN_SUCCESS = 0
+# RETURN_ERROR = 1
+# RETURN_SKIPPED = 2
+# RETURN_TASK_STOPPED = 3
+# RETURN_PIECE_NOT_FOUND = 4
+
+
+from puzzle2.PzLog import PzLog
+
+TASK_NAME = "add_namespace"
+DATA_KEY_REQUIRED = []
+
+def main(event={}, context={}):
+
+
+    data = event.get("data", {})
+
+    logger = context.get("logger")
+    if not logger:
+        logger = PzLog().logger
+
+    return_code = 0
+    logger.details.add_detail("get mira ragdoll controller: {}".format(controller))
+    logger.details.set_header(return_code, header)
+
+
+    return {"return_code": return_code}
+

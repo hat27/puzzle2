@@ -8,11 +8,11 @@ import copy
 import datetime
 import traceback
 import importlib
-import subprocess
 
 from . import PzLog
 from . import pz_env as pz_env
 from . import pz_config as pz_config
+from . import run_process as run_process
 from .PzTask import PzTask
 
 try:
@@ -68,6 +68,7 @@ class Puzzle(object):
             if task_directory not in sys.path:
                 sys.path.append(task_directory)
 
+
     def execute_step(self, tasks, data, common, step):
         """
         when data is list, same tasks run for each.
@@ -96,6 +97,7 @@ class Puzzle(object):
             "common" is special keyword.
             we can use them everywhere
             """
+
             temp_common = copy.deepcopy(common)
             temp_common.update(data)
             data = temp_common
@@ -138,7 +140,7 @@ class Puzzle(object):
         task.setdefault("name", module_path.split(".")[-1])
 
         # initialize details log
-        self.logger.details.set_name(task["name"])
+        task_index, index_name = self.logger.details.set_name(task["name"])
         self.logger.details.set_header(0, "successed: {}".format(task["name"]))
         if "comment" in task and task["comment"] != "":
             self.logger.details.add_detail(task["comment"])
@@ -172,14 +174,14 @@ class Puzzle(object):
             response = {"return_code": 0}
 
         self.logger.details.update_code(response["return_code"])
+
         return response
 
     def execute(self, task, data, module):
         task = PzTask(module=module,
-                        task=task,
-                        data=data,
-                        context=self.context)
-
+                      task=task,
+                      data=data,
+                      context=self.context)
         response = task.execute()  # {"return_code": A, "data_globals": B}
 
         if "update_context" in response:
@@ -269,18 +271,42 @@ class Puzzle(object):
                 self.logger.debug("break: {}".format(step_name))
                 break
 
-            [_append_sys_path(l) for l in step.get("sys_path", "").split(";") if l != ""]
-
-            now = datetime.datetime.now()
             data_set.setdefault(step_name, {})
-            self.logger.debug("- {} start - {}".format(step_name, step.get("comment", "")))
+            if "pipe" in step:
+                pipe_data = copy.deepcopy(step["pipe"])
+                pipe_data["task_set"] = step["tasks"]
+                pipe_data["data_set"] = data_set
+                pipe_data["context"] = copy.deepcopy(self.context)
+                pipe_data["close_app"] = step.get("close_app", True)
+                if "sys_path" in step and step["sys_path"]:
+                    pipe_data["sys_path"] = step["sys_path"]
+                response = run_process.run_process(**pipe_data)
+                command, job_directory = response
+                result_path = "{}/results.json".format(job_directory)
 
-            self.execute_step(tasks=step["tasks"],
-                          data=data_set[step_name],
-                          common=common,
-                          step=step_name)
+                if command:
+                    if os.path.exists(result_path):
+                        info, data = pz_config.read(result_path)
+                        self.logger.details.add_data_set(data["headers"], 
+                                                         data["results"], 
+                                                         location=step["pipe"])
 
-            self.logger.info("- {} takes: {}-\n".format(step_name, datetime.datetime.now() - now))
+                        for key, value in data["context"].items():
+                            if key.startswith("_") or key == "logger":
+                                continue
+                            self.context[key] = value
+
+            else:
+                [_append_sys_path(l) for l in step.get("sys_path", "").split(";") if l != ""]
+                now = datetime.datetime.now()
+                self.logger.debug("- {} start - {}".format(step_name, step.get("comment", "")))
+
+                self.execute_step(tasks=step["tasks"],
+                                  data=data_set[step_name],
+                                  common=common,
+                                  step=step_name)
+
+                self.logger.info("- {} takes: {}-\n".format(step_name, datetime.datetime.now() - now))
 
         if steps[-1]["step"] == "closure":
             self.break_ = False

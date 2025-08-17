@@ -1,0 +1,32 @@
+{
+  "info": {
+    "name": {},
+    "category": "",
+    "version": ""
+  },
+  "data": {
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "simple_formatter": {
+        "datefmt": "%m-%d-%y %H:%M:%S",
+        "format": "%(asctime)-25s %(levelname)-10s %(module)-20s %(funcName)-25s line:%(lineno)-5s %(message)s"
+      }
+    },
+    "handlers": {
+      "stream_handler": {
+        "class": "logging.StreamHandler",
+        "level": "DEBUG",
+        "formatter": "simple_formatter",
+        "stream": "ext://sys.stdout"
+      },
+      "file_handler": {
+        "class": "logging.FileHandler",
+        "level": "DEBUG",
+        "formatter": "simple_formatter",
+        "filename": "logfile.log",
+        "mode": "a"
+      }
+    }
+  }
+}

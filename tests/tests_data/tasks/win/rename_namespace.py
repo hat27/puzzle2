@@ -26,7 +26,9 @@ def main(event={}, context={}):
     logger.debug("new name: {}".format(new_name))
 
     update_context["{}.new_name".format(TASK_NAME)] = new_name
-
+    import time
+    # time.sleep(0.7)
+    logger.details.add_detail("test!")
     return {"return_code": return_code, "update_context": update_context}
 
 

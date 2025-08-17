@@ -1,32 +1,31 @@
 from puzzle2.PzLog import PzLog
 
-TASK_NAME = "bake_all"
-DATA_KEY_REQUIRED = ["assets"]
+TASK_NAME = "import_file"
+DATA_KEY_REQUIRED = ["path"]
 
 def main(event={}, context={}):
     """
-    bake all assets
+    import file from somewhare
 
     key required from data:
-        assets: list
+        path: str
     """
 
     data = event.get("data", {})
     task = event.get("task", {})
-    data_globals = event.get("data_globals", {})
 
     logger = context.get("logger")
     if not logger:
         logger = PzLog().logger
 
     return_code = 0
+    logger.details.set_header(return_code, "append anim file")
 
-    
-
-
-    return {"return_code": return_code, "data_globals": data_globals}
+    import time
+    time.sleep(0.5)
+    return {"return_code": return_code}
 
 
 if __name__ == "__main__":
-    data = {"assets": [{"name": "a"}, {"name": "b"}]}
+    data = {"path": "str"}
     main(event={"data": data})

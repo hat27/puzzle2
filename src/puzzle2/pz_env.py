@@ -40,7 +40,11 @@ def get_puzzle_module_path():
     return os.path.dirname(get_puzzle_path()).replace("\\", "/")
 
 def get_log_template():
+    # Prefer YAML template by default; pz_config will error if YAML isn't available
     return "{}/log.template.yml".format(get_puzzle_path())
+
+def get_log_template_json():
+    return "{}/log.template.json".format(get_puzzle_path())
 
 def get_temp_directory(subdir=""):
     path = "%s/%s" % (TEMP_PATH, subdir)
