@@ -1,58 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://hat27.github.io/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/concept/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/concept/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/installation/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/installation/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/batch/introduction/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/batch/introduction/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/batch/sample/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/batch/sample/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/config/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/testing/dcc/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/context/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/usage/config/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/response/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/usage/context/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/rule/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/usage/deadline/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/task/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/usage/logging/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://hat27.github.io/usage/tips/</loc>
-         <lastmod>2023-03-22</lastmod>
+         <loc>https://hat27.github.io/puzzle2/usage/pipeline/</loc>
+         <lastmod>2025-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://hat27.github.io/puzzle2/usage/response/</loc>
+         <lastmod>2025-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://hat27.github.io/puzzle2/usage/rule/</loc>
+         <lastmod>2025-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://hat27.github.io/puzzle2/usage/run_process/</loc>
+         <lastmod>2025-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://hat27.github.io/puzzle2/usage/task/</loc>
+         <lastmod>2025-08-17</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://hat27.github.io/puzzle2/usage/tips/</loc>
+         <lastmod>2025-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
