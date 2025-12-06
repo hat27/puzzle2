@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import json
@@ -7,6 +8,7 @@ try:
     maya.standalone.initialize("python")    
 except:
     pass
+
 class CustomEncoder(json.JSONEncoder):
     def default(self, o):
         return str(o)
@@ -17,10 +19,7 @@ def main(path=None):
         if "PUZZLE_JOB_PATH" in os.environ:
             path = os.environ["PUZZLE_JOB_PATH"]
         else:
-            root = sys.argv[-1]
-            path = "{}/config.json".format(root)
-            if not os.path.exists(path):
-                raise Exception("No config.json found in {}".format(root))
+            raise Exception("No config.json found using PUZZLE_JOB_PATH environment variable or \"-cp\" argument")
 
     # Load job config
     if sys.version_info.major == 2:
@@ -82,5 +81,8 @@ def main(path=None):
 
 
 if __name__ in ["__main__", "__builtin__", "builtins"]:
-    main()
-
+    parser = argparse.ArgumentParser(description="Run batch kicker with config path")
+    parser.add_argument("-cp", "--config_path", type=str, help="Path to config.json", required=False, dest="config")
+    args = parser.parse_args()
+    
+    main(path=args.config)

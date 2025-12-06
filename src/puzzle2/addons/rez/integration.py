@@ -2,6 +2,8 @@ import os
 import importlib
 import traceback
 
+import sys
+sys.path.append("/Users/goh/Documents/repo/puzzle2/src")
 ADDON_PATH = None
 import puzzle2.pz_env as pz_env
 
@@ -23,17 +25,18 @@ def close_event():
 
 def get_command(**kwargs):
     def _get_app_path(program_path=None):
-        program_path = "rez"
+        program_path = "rez-env"
         return program_path
 
     def _get_addon(app):
         global ADDON_PATH
         script_root = pz_env.get_puzzle_path()
         path = "{}/addons/customs/{}".format(script_root, app)
+        print('>>>>', path)
         if os.path.exists(path):
             ADDON_PATH = "puzzle2.addons.customs.{}.integration".format(app)
         ADDON_PATH = "puzzle2.addons.{}.integration".format(app)
-
+        print('>>>>', ADDON_PATH)
         try:
             addon = importlib.import_module(ADDON_PATH)
             reload(addon)
@@ -43,29 +46,34 @@ def get_command(**kwargs):
             print(traceback.format_exc())
             return False
 
-    app_path = _get_app_path(kwargs.get("program_path", None))
-    if not app_path:
+    rez_path = _get_app_path(kwargs.get("program_path", None))
+    if not rez_path:
         return False
     
-    rez_package = kwargs["rez_package"]
-    rez_version = kwargs["rez_version"]
+    rez_request = kwargs["rez_request"]
 
-    app = kwargs["app"]
-    app_package = kwargs["app_package"]
+    app = kwargs.get("app")
 
     addon = _get_addon(app)
     if not addon:
         return False
+    
+    cmd = "{} {}".format(rez_path, rez_request)
+    if app:
+        cmd += " -- {}".format(app)
+        script = addon.get_command(**kwargs)
+        if script:
+            cmd += " {}".format(script)
 
-    cmd = addon.get_command(**kwargs)
-    return "{} env {}-{} {} -- {} {}".format(app_path, rez_package, rez_version, app_package, app, cmd)
-
+    if "command" in kwargs:
+        cmd += kwargs["command"]
+    
+    return cmd
 
 if __name__ == "__main__":
     data = {"app": "mayapy", 
             "rez_package": "projectA", 
-            "rez_version": "1.0.0", 
-            "app_package": "maya", 
+            "rez_request": "maya puzzle2",
             "script_path": "xxxxx.py",
             "launcher": "rez"}
     
